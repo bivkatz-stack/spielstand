@@ -279,8 +279,47 @@
       line-height: 1.6;
     }
 
+    .table-hint {
+      margin: 7px 2px 0;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
     .new-game {
       padding: 19px;
+    }
+
+    .data-tools {
+      display: grid;
+      gap: 10px;
+      padding: 19px;
+    }
+
+    .data-tools h2 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: -.025em;
+    }
+
+    .data-tools p {
+      margin: -4px 0 3px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .data-tools .secondary-button {
+      width: 100%;
+    }
+
+    .visually-hidden {
+      width: 1px;
+      height: 1px;
+      position: absolute;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      clip-path: inset(50%);
     }
 
     .new-game h2 {
@@ -387,7 +426,10 @@
     .secondary-button:focus-visible,
     .game-choice:focus-visible,
     .remove-player:focus-visible,
-    .text-button:focus-visible {
+    .text-button:focus-visible,
+    .delete-round:focus-visible,
+    .score-input:focus-visible,
+    .text-input:focus-visible {
       outline: 2px solid var(--accent);
       outline-offset: 3px;
     }
@@ -505,8 +547,51 @@
       cursor: pointer;
     }
 
+    .edit-button:hover {
+      color: var(--accent);
+    }
+
     .text-button:hover {
       color: var(--danger);
+    }
+
+    .edit-panel {
+      padding: 19px 23px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, .02);
+    }
+
+    .edit-panel[hidden] {
+      display: none;
+    }
+
+    .edit-panel h3 {
+      margin: 0 0 14px;
+      font-size: 14px;
+    }
+
+    .edit-game-form {
+      display: grid;
+      gap: 13px;
+    }
+
+    .edit-game-form .player-fields {
+      margin: 0;
+    }
+
+    .edit-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .edit-actions .secondary-button {
+      min-height: 43px;
+      padding-inline: 14px;
+    }
+
+    .edit-rule {
+      max-width: 100%;
     }
 
     .score-section {
@@ -523,12 +608,26 @@
       overflow-x: auto;
       border: 1px solid var(--line);
       border-radius: 12px;
+      overscroll-behavior-inline: contain;
     }
 
     .score-table {
       width: 100%;
       border-collapse: collapse;
       text-align: left;
+    }
+
+    .score-table th:first-child,
+    .score-table td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: var(--surface);
+    }
+
+    .score-table th:first-child {
+      z-index: 2;
+      background: #1c1e1a;
     }
 
     .score-table th,
@@ -585,6 +684,14 @@
     .rank.winner {
       background: rgba(201, 243, 106, .15);
       color: var(--accent);
+    }
+
+    .score-summary-mobile {
+      display: none;
+    }
+
+    .score-summary-mobile[hidden] {
+      display: none;
     }
 
     .round-form {
@@ -745,6 +852,68 @@
         padding-inline: 16px;
       }
 
+      .board-header {
+        padding-block: 18px;
+      }
+
+      .board-actions {
+        align-self: stretch;
+        justify-content: flex-start;
+      }
+
+      .edit-panel {
+        padding-inline: 16px;
+      }
+
+      .score-summary-desktop {
+        display: none;
+      }
+
+      .score-summary-mobile {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+
+      .mobile-player-score {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 13px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: rgba(255, 255, 255, .02);
+      }
+
+      .mobile-player-score strong {
+        min-width: 0;
+        overflow: hidden;
+        font-size: 13px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .mobile-player-score span {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .mobile-player-score b {
+        color: var(--accent);
+        font-size: 15px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .score-table th,
+      .score-table td {
+        padding: 11px 10px;
+      }
+
       .round-form {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
@@ -785,7 +954,7 @@
       <p>Lege eine Partie für jedes Gesellschaftsspiel an, trage die Punkte pro Runde ein und behalte den Gesamtstand automatisch im Blick.</p>
     </section>
 
-    <div class="notice" id="notice" role="status" aria-live="polite" hidden></div>
+    <div class="notice" id="notice" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
     <div class="workspace">
       <aside class="sidebar" aria-label="Partien verwalten">
@@ -810,10 +979,23 @@
             <option value="Skip-Bo"></option>
             <option value="Uno"></option>
           </datalist>
+          <label class="field-label" for="scoring-mode" style="margin-top: 14px;">Wertung</label>
+          <select class="text-input" id="scoring-mode" name="scoringMode">
+            <option value="high">Höchste Punktzahl gewinnt</option>
+            <option value="low">Niedrigste Punktzahl gewinnt</option>
+          </select>
           <div class="player-fields" id="player-fields" aria-label="Mitspielende"></div>
           <button class="secondary-button" id="add-player" type="button">＋ Person hinzufügen</button>
           <button class="button button-full" type="submit" style="margin-top: 14px;">Partie starten <span aria-hidden="true">→</span></button>
         </form>
+
+        <section class="panel data-tools" aria-labelledby="data-tools-title">
+          <h2 id="data-tools-title">Daten sichern</h2>
+          <p>Exportiere deine Partien oder stelle eine Sicherung wieder her.</p>
+          <button class="secondary-button" id="export-data" type="button">↓ Daten exportieren</button>
+          <button class="secondary-button" id="import-data" type="button">↑ Sicherung importieren</button>
+          <input class="visually-hidden" id="import-file" type="file" accept="application/json,.json" aria-label="JSON-Sicherung auswählen">
+        </section>
       </aside>
 
       <section class="panel board" id="scoreboard" aria-label="Spielstand">
@@ -828,7 +1010,7 @@
 
   <footer class="wrap">
     <span>Spielstand — damit der Spieleabend im Flow bleibt.</span>
-    <span>Deine Einträge bleiben in diesem Browser.</span>
+    <span>Deine Einträge bleiben lokal in diesem Browser.</span>
   </footer>
 
   <script>
@@ -836,19 +1018,25 @@
       "use strict";
 
       const STORAGE_KEY = "spielstand.partien.v1";
+      const BACKUP_FORMAT = "spielstand-backup";
       const gameList = document.getElementById("game-list");
       const gameCount = document.getElementById("game-count");
       const scoreboard = document.getElementById("scoreboard");
       const notice = document.getElementById("notice");
       const playerFields = document.getElementById("player-fields");
       const gameNameInput = document.getElementById("game-name");
+      const scoringModeInput = document.getElementById("scoring-mode");
+      const importFileInput = document.getElementById("import-file");
       let games = [];
       let activeGameId = null;
       let playerDraft = ["Spieler 1", "Spieler 2"];
+      let editDraft = null;
 
       function showNotice(message, isError = false) {
         notice.textContent = message;
         notice.classList.toggle("error", isError);
+        notice.setAttribute("role", isError ? "alert" : "status");
+        notice.setAttribute("aria-live", isError ? "assertive" : "polite");
         notice.hidden = !message;
       }
 
@@ -887,6 +1075,48 @@
         return game.rounds.reduce((sum, round) => sum + round.scores[playerIndex], 0);
       }
 
+      function isValidGame(game) {
+        return Boolean(
+          game &&
+          typeof game.id === "string" &&
+          game.id.length > 0 &&
+          typeof game.name === "string" &&
+          game.name.trim().length > 0 &&
+          game.name.length <= 60 &&
+          Array.isArray(game.players) &&
+          game.players.length >= 2 &&
+          game.players.length <= 20 &&
+          game.players.every((player) => typeof player === "string" && player.trim().length > 0 && player.length <= 40) &&
+          Array.isArray(game.rounds) &&
+          game.rounds.length <= 10000 &&
+          game.rounds.every((round) =>
+            round &&
+            typeof round.id === "string" &&
+            round.id.length > 0 &&
+            Array.isArray(round.scores) &&
+            round.scores.length === game.players.length &&
+            round.scores.every((score) => typeof score === "number" && Number.isFinite(score))
+          ) &&
+          (game.scoringMode === undefined || game.scoringMode === "high" || game.scoringMode === "low")
+        );
+      }
+
+      function normalizeGame(game) {
+        return { ...game, scoringMode: game.scoringMode || "high" };
+      }
+
+      function parseBackup(value) {
+        const source = Array.isArray(value)
+          ? value
+          : value && value.format === BACKUP_FORMAT && value.version === 1 && Array.isArray(value.games)
+            ? value.games
+            : null;
+        if (!source || source.length > 1000 || !source.every(isValidGame)) {
+          throw new Error("Die Sicherungsdatei hat ein ungültiges oder nicht unterstütztes Format.");
+        }
+        return source.map(normalizeGame);
+      }
+
       function renderPlayerFields() {
         playerFields.innerHTML = playerDraft.map((name, index) => `
           <div class="player-field">
@@ -908,15 +1138,57 @@
             <span class="game-icon" aria-hidden="true">♟</span>
             <span class="game-choice-copy">
               <strong>${escapeHtml(game.name)}</strong>
-              <span>${game.players.length} ${game.players.length === 1 ? "Person" : "Personen"} · ${game.rounds.length} ${game.rounds.length === 1 ? "Runde" : "Runden"}</span>
+              <span>${game.players.length} ${game.players.length === 1 ? "Person" : "Personen"} · ${game.rounds.length} ${game.rounds.length === 1 ? "Runde" : "Runden"} · ${game.scoringMode === "low" ? "wenigste Punkte" : "meiste Punkte"}</span>
             </span>
           </button>
         `).join("");
       }
 
+      function renderEditPanel(game) {
+        if (!editDraft) {
+          return "";
+        }
+        const playerInputs = editDraft.players.map((name, index) => `
+          <div class="player-field">
+            <input class="text-input edit-player-input" aria-label="Name von Person ${index + 1}" maxlength="40" placeholder="Person ${index + 1}" value="${escapeHtml(name)}" required>
+            <button class="remove-player" type="button" aria-label="Person ${index + 1} entfernen" data-edit-remove-player="${index}" ${editDraft.players.length <= 2 ? "disabled" : ""}>×</button>
+          </div>
+        `).join("");
+
+        return `
+          <div class="edit-panel" id="edit-panel">
+            <h3>Partie bearbeiten</h3>
+            <form class="edit-game-form" id="edit-game-form">
+              <div>
+                <label class="field-label" for="edit-game-name">Spielname</label>
+                <input class="text-input" id="edit-game-name" maxlength="60" value="${escapeHtml(editDraft.name ?? game.name)}" required>
+              </div>
+              <div>
+                <label class="field-label" for="edit-scoring-mode">Wertung</label>
+                <select class="text-input edit-rule" id="edit-scoring-mode">
+                  <option value="high" ${editDraft.scoringMode === "high" ? "selected" : ""}>Höchste Punktzahl gewinnt</option>
+                  <option value="low" ${editDraft.scoringMode === "low" ? "selected" : ""}>Niedrigste Punktzahl gewinnt</option>
+                </select>
+              </div>
+              <div>
+                <span class="field-label">Mitspielende</span>
+                <div class="player-fields" id="edit-player-fields">${playerInputs}</div>
+              </div>
+              <div class="edit-actions">
+                <button class="secondary-button" type="button" id="edit-add-player">＋ Person hinzufügen</button>
+                <button class="button" type="submit">Änderungen speichern</button>
+                <button class="secondary-button" type="button" id="cancel-edit">Abbrechen</button>
+              </div>
+              <p class="form-hint">Neue Mitspielende erhalten in bereits gespielten Runden 0 Punkte. Entfernte Personen und ihre bisherigen Punkte werden aus der Partie gelöscht.</p>
+            </form>
+          </div>
+        `;
+      }
+
       function renderScoreboard() {
         const game = getActiveGame();
         if (!game) {
+          editDraft = null;
           scoreboard.innerHTML = `
             <div class="board-empty">
               <div class="empty-icon" aria-hidden="true">＋</div>
@@ -928,22 +1200,28 @@
         }
 
         const totals = game.players.map((_, index) => gameTotal(game, index));
-        const highestScore = Math.max(...totals);
+        const winningScore = game.scoringMode === "low" ? Math.min(...totals) : Math.max(...totals);
         const sortedPlayers = game.players.map((name, index) => ({ name, index, total: totals[index] }))
-          .sort((first, second) => second.total - first.total);
+          .sort((first, second) => game.scoringMode === "low" ? first.total - second.total : second.total - first.total);
         const rankingRows = sortedPlayers.map((player, rank) => `
           <tr>
-            <td><span class="rank ${player.total === highestScore && game.rounds.length > 0 ? "winner" : ""}">${rank + 1}</span></td>
+            <td><span class="rank ${player.total === winningScore && game.rounds.length > 0 ? "winner" : ""}">${rank + 1}</span></td>
             <td class="player-name">${escapeHtml(player.name)}</td>
             ${game.rounds.map((round) => `<td class="round-score">${round.scores[player.index]}</td>`).join("")}
             <td class="total-score">${player.total}</td>
           </tr>
         `).join("");
+        const mobileRanking = sortedPlayers.map((player, rank) => `
+          <div class="mobile-player-score">
+            <strong>${escapeHtml(player.name)}</strong>
+            <span><span>${rank === 0 && game.rounds.length > 0 ? "Führt" : `${rank + 1}. Platz`}</span><b>${player.total}</b></span>
+          </div>
+        `).join("");
 
         const scoreFields = game.players.map((name, index) => `
           <div class="round-field">
             <label for="score-${index}">${escapeHtml(name)}</label>
-            <input class="score-input" id="score-${index}" name="score-${index}" type="number" step="any" inputmode="decimal" value="0" required>
+            <input class="score-input" id="score-${index}" name="score-${index}" type="number" step="any" inputmode="decimal" value="0" required aria-label="Punkte für ${escapeHtml(name)} in der nächsten Runde">
           </div>
         `).join("");
 
@@ -962,15 +1240,18 @@
             <div>
               <span class="board-kicker">Aktuelle Partie</span>
               <h2 class="board-title">${escapeHtml(game.name)}</h2>
-              <p class="board-meta">${game.players.length} Mitspielende · ${game.rounds.length} ${game.rounds.length === 1 ? "Runde gespielt" : "Runden gespielt"}</p>
+              <p class="board-meta">${game.players.length} Mitspielende · ${game.rounds.length} ${game.rounds.length === 1 ? "Runde gespielt" : "Runden gespielt"} · ${game.scoringMode === "low" ? "Niedrigste Punktzahl gewinnt" : "Höchste Punktzahl gewinnt"}</p>
             </div>
             <div class="board-actions">
+              <button class="text-button edit-button" type="button" id="edit-game">${editDraft ? "Bearbeitung schließen" : "Partie bearbeiten"}</button>
               <button class="text-button" type="button" id="delete-game">Partie löschen</button>
             </div>
           </div>
+          ${renderEditPanel(game)}
           <div class="score-section">
             <h3>Gesamtstand</h3>
-            <div class="table-scroll">
+            <div class="score-summary-mobile" aria-label="Rangliste">${mobileRanking}</div>
+            <div class="table-scroll score-summary-desktop" role="region" aria-label="Gesamtstand, horizontal scrollbar" tabindex="0">
               <table class="score-table">
                 <thead>
                   <tr><th scope="col">Platz</th><th scope="col">Mitspielende</th>${game.rounds.map((_, index) => `<th scope="col">R ${index + 1}</th>`).join("")}<th scope="col">Gesamt</th></tr>
@@ -978,10 +1259,11 @@
                 <tbody>${rankingRows}</tbody>
               </table>
             </div>
+            <p class="table-hint score-summary-desktop">Bei vielen Runden kannst du die Tabelle seitlich scrollen.</p>
 
             <div class="rounds-heading">
               <h3>Punkte für die nächste Runde</h3>
-              <span>Negative Punkte sind möglich</span>
+              <span>${game.scoringMode === "low" ? "Wenigere Punkte sind besser" : "Mehr Punkte sind besser"}</span>
             </div>
             <form class="round-form" id="round-form">
               ${scoreFields}
@@ -993,12 +1275,13 @@
               <span>${game.rounds.length} ${game.rounds.length === 1 ? "Eintrag" : "Einträge"}</span>
             </div>
             ${game.rounds.length > 0 ? `
-              <div class="table-scroll">
+              <div class="table-scroll" role="region" aria-label="Rundenverlauf, horizontal scrollbar" tabindex="0">
                 <table class="score-table round-table">
                   <thead><tr><th scope="col">Runde</th>${game.players.map((name) => `<th scope="col">${escapeHtml(name)}</th>`).join("")}<th scope="col" aria-label="Aktionen"></th></tr></thead>
                   <tbody>${roundRows}</tbody>
                 </table>
               </div>
+              <p class="table-hint">Bei vielen Mitspielenden kannst du die Tabelle seitlich scrollen.</p>
             ` : '<div class="empty-rounds">Noch keine Punkte notiert. Trage oben die Punkte aus der ersten Runde ein.</div>'}
           </div>
         `;
@@ -1022,22 +1305,7 @@
           if (!Array.isArray(parsed)) {
             throw new Error("Ungültiges Datenformat");
           }
-          games = parsed.filter((game) =>
-            game &&
-            typeof game.id === "string" &&
-            typeof game.name === "string" &&
-            Array.isArray(game.players) &&
-            game.players.length >= 2 &&
-            game.players.every((player) => typeof player === "string") &&
-            Array.isArray(game.rounds) &&
-            game.rounds.every((round) =>
-              round &&
-              typeof round.id === "string" &&
-              Array.isArray(round.scores) &&
-              round.scores.length === game.players.length &&
-              round.scores.every((score) => typeof score === "number" && Number.isFinite(score))
-            )
-          );
+          games = parsed.filter(isValidGame).map(normalizeGame);
           if (parsed.length !== games.length) {
             showNotice("Einige gespeicherte Partien konnten nicht geladen werden. Die übrigen Daten sind verfügbar.", true);
           }
@@ -1081,14 +1349,17 @@
           return;
         }
 
-        const game = { id: createId(), name, players, rounds: [] };
+        const game = { id: createId(), name, players, rounds: [], scoringMode: scoringModeInput.value };
         games.unshift(game);
         activeGameId = game.id;
-        saveGames();
+        const saved = saveGames();
         render();
         gameNameInput.value = "";
         playerDraft = ["Spieler 1", "Spieler 2"];
         renderPlayerFields();
+        if (saved) {
+          showNotice(`Partie „${name}“ erstellt.`);
+        }
       });
 
       gameList.addEventListener("click", (event) => {
@@ -1119,12 +1390,46 @@
           return;
         }
         game.rounds.push({ id: createId(), scores });
-        saveGames();
-        showNotice("Runde eingetragen.");
+        const saved = saveGames();
         render();
+        if (saved) {
+          showNotice(`Runde ${game.rounds.length} eingetragen. Gesamtstand aktualisiert.`);
+        }
       });
 
       scoreboard.addEventListener("click", (event) => {
+        if (event.target.id === "edit-game") {
+          const game = getActiveGame();
+          if (!game) {
+            return;
+          }
+          editDraft = editDraft
+            ? null
+            : { players: [...game.players], playerOrigins: game.players.map((_, index) => index), scoringMode: game.scoringMode };
+          render();
+          if (editDraft) {
+            document.getElementById("edit-game-name").focus();
+          }
+          return;
+        }
+
+        if (event.target.id === "edit-add-player") {
+          editDraft.players.push("");
+          editDraft.playerOrigins.push(null);
+          render();
+          const inputs = scoreboard.querySelectorAll(".edit-player-input");
+          inputs[inputs.length - 1]?.focus();
+          return;
+        }
+
+        if (event.target.id === "cancel-edit") {
+          editDraft = null;
+          render();
+          showNotice("Bearbeitung abgebrochen.");
+          scoreboard.querySelector("#edit-game")?.focus();
+          return;
+        }
+
         if (event.target.id === "delete-game") {
           const game = getActiveGame();
           if (!game || !window.confirm(`Möchtest du die Partie „${game.name}“ mit allen Runden wirklich löschen?`)) {
@@ -1132,9 +1437,23 @@
           }
           games = games.filter((item) => item.id !== game.id);
           activeGameId = games.length > 0 ? games[0].id : null;
-          saveGames();
-          showNotice("Partie gelöscht.");
+          editDraft = null;
+          const saved = saveGames();
           render();
+          if (saved) {
+            showNotice("Partie mit allen Runden gelöscht.");
+          }
+          return;
+        }
+
+        const removePlayer = event.target.closest("[data-edit-remove-player]");
+        if (removePlayer && editDraft && editDraft.players.length > 2) {
+          const index = Number(removePlayer.dataset.editRemovePlayer);
+          editDraft.players.splice(index, 1);
+          editDraft.playerOrigins.splice(index, 1);
+          render();
+          const inputs = scoreboard.querySelectorAll(".edit-player-input");
+          inputs[Math.min(index, inputs.length - 1)]?.focus();
           return;
         }
 
@@ -1145,9 +1464,113 @@
             return;
           }
           game.rounds = game.rounds.filter((round) => round.id !== deleteButton.dataset.removeRound);
-          saveGames();
-          showNotice("Runde gelöscht. Der Gesamtstand wurde aktualisiert.");
+          const saved = saveGames();
           render();
+          if (saved) {
+            showNotice("Runde gelöscht. Der Gesamtstand wurde aktualisiert.");
+          }
+        }
+      });
+
+      scoreboard.addEventListener("input", (event) => {
+        if (!editDraft) {
+          return;
+        }
+        if (event.target.id === "edit-game-name") {
+          editDraft.name = event.target.value;
+        } else if (event.target.matches(".edit-player-input")) {
+          const inputs = Array.from(scoreboard.querySelectorAll(".edit-player-input"));
+          const index = inputs.indexOf(event.target);
+          if (index >= 0) {
+            editDraft.players[index] = event.target.value;
+          }
+        }
+      });
+
+      scoreboard.addEventListener("change", (event) => {
+        if (editDraft && event.target.id === "edit-scoring-mode") {
+          editDraft.scoringMode = event.target.value;
+        }
+      });
+
+      scoreboard.addEventListener("submit", (event) => {
+        if (event.target.id !== "edit-game-form") {
+          return;
+        }
+        event.preventDefault();
+        const game = getActiveGame();
+        const name = document.getElementById("edit-game-name").value.trim();
+        const players = Array.from(scoreboard.querySelectorAll(".edit-player-input"), (input) => input.value.trim());
+        const scoringMode = document.getElementById("edit-scoring-mode").value;
+        if (!game || !name || players.length < 2 || players.length > 20 || players.some((player) => !player)) {
+          showNotice("Bitte gib einen Spielnamen und mindestens zwei gültige Namen ein (maximal 20 Mitspielende).", true);
+          return;
+        }
+
+        game.rounds = game.rounds.map((round) => ({
+          ...round,
+          scores: editDraft.playerOrigins.map((origin) => origin === null ? 0 : round.scores[origin])
+        }));
+        game.name = name;
+        game.players = players;
+        game.scoringMode = scoringMode;
+        editDraft = null;
+        const saved = saveGames();
+        render();
+        if (saved) {
+          showNotice("Partie, Mitspielende und Wertung aktualisiert.");
+        }
+      });
+
+      document.getElementById("export-data").addEventListener("click", () => {
+        const backup = {
+          format: BACKUP_FORMAT,
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          games
+        };
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `spielstand-sicherung-${new Date().toISOString().slice(0, 10)}.json`;
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showNotice(`${games.length} ${games.length === 1 ? "Partie exportiert." : "Partien exportiert."}`);
+      });
+
+      document.getElementById("import-data").addEventListener("click", () => importFileInput.click());
+      importFileInput.addEventListener("change", async () => {
+        const file = importFileInput.files && importFileInput.files[0];
+        importFileInput.value = "";
+        if (!file) {
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          showNotice("Die Sicherungsdatei ist zu groß. Erlaubt sind maximal 5 MB.", true);
+          return;
+        }
+        try {
+          const imported = parseBackup(JSON.parse(await file.text()));
+          if (!window.confirm(`${imported.length} ${imported.length === 1 ? "Partie wird" : "Partien werden"} importiert und ersetzen alle aktuell gespeicherten Partien. Fortfahren?`)) {
+            showNotice("Import abgebrochen.");
+            return;
+          }
+          const previousGames = games;
+          games = imported;
+          activeGameId = games.length > 0 ? games[0].id : null;
+          editDraft = null;
+          const saved = saveGames();
+          if (!saved) {
+            games = previousGames;
+            activeGameId = games.length > 0 ? games[0].id : null;
+            render();
+            return;
+          }
+          render();
+          showNotice(`${games.length} ${games.length === 1 ? "Partie importiert." : "Partien importiert."}`);
+        } catch (error) {
+          showNotice(error instanceof SyntaxError ? "Die Datei enthält kein gültiges JSON." : error.message || "Die Sicherungsdatei konnte nicht importiert werden.", true);
         }
       });
 
