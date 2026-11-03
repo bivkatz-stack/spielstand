@@ -1488,7 +1488,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (window.crypto && typeof window.crypto.randomUUID === "function") {
           return window.crypto.randomUUID();
         }
-        return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        if (window.crypto && typeof window.crypto.getRandomValues === "function") {
+          const bytes = window.crypto.getRandomValues(new Uint8Array(16));
+          bytes[6] = (bytes[6] & 0x0f) | 0x40;
+          bytes[8] = (bytes[8] & 0x3f) | 0x80;
+          const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+          return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+        }
+        throw new Error("Dein Browser unterstützt keine sichere ID-Erstellung.");
       }
 
       function getActiveGame() {
@@ -2393,12 +2400,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const invitePermission = document.getElementById("invite-permission").value;
         try {
           const participantIds = await Promise.all(players.map(ensurePlayer));
-          const inserted = await restInsert("games", [{
+          insertedGameId = createId();
+          await restInsert("games", [{
+            id: insertedGameId,
             owner_id: currentUser.id,
             name: "Rommé",
             starting_player_id: playerId(startingPlayer)
-          }]);
-          insertedGameId = inserted[0].id;
+          }], "", "return=minimal");
           await restInsert("game_players", players.map((_, index) => ({
             game_id: insertedGameId,
             owner_id: currentUser.id,
