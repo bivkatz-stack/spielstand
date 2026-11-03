@@ -98,6 +98,42 @@
       font-size: 12px;
     }
 
+    .auth-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .auth-panel {
+      max-width: 460px;
+      margin: 0 auto 24px;
+      padding: 22px;
+    }
+
+    .auth-panel h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .auth-panel p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .auth-panel .button {
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    .workspace[hidden],
+    .auth-panel[hidden],
+    #sign-out[hidden],
+    #migrate-local-data[hidden] {
+      display: none;
+    }
+
     .local-label::before {
       width: 7px;
       height: 7px;
@@ -1082,7 +1118,10 @@
       <span class="brand-mark" aria-hidden="true">+</span>
       spielstand
     </a>
-    <span class="local-label">Privat auf diesem Gerät gespeichert</span>
+    <div class="auth-actions">
+      <span class="local-label" id="connection-status">Mit Supabase verbinden</span>
+      <button class="secondary-button" id="sign-out" type="button" hidden>Abmelden</button>
+    </div>
   </header>
 
   <main class="wrap">
@@ -1094,7 +1133,17 @@
 
     <div class="notice" id="notice" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
-    <div class="workspace">
+    <section class="panel auth-panel" id="auth-panel" aria-labelledby="auth-title">
+      <h2 id="auth-title">Spielstände sicher synchronisieren</h2>
+      <p>Melde dich mit deiner E-Mail-Adresse an. Du erhältst einen einmaligen Anmeldelink; ein Passwort ist nicht nötig.</p>
+      <form id="auth-form">
+        <label class="field-label" for="auth-email">E-Mail-Adresse</label>
+        <input class="text-input" id="auth-email" name="email" type="email" maxlength="254" autocomplete="email" required>
+        <button class="button" type="submit">Anmeldelink senden <span aria-hidden="true">→</span></button>
+      </form>
+    </section>
+
+    <div class="workspace" id="workspace" hidden>
       <aside class="sidebar" aria-label="Partien verwalten">
         <section class="panel" aria-labelledby="games-heading">
           <div class="panel-heading">
@@ -1128,7 +1177,8 @@
 
         <section class="panel data-tools" aria-labelledby="data-tools-title">
           <h2 id="data-tools-title">Daten sichern</h2>
-          <p>Sichere deine Partien und die gemeinsame Spielerliste.</p>
+          <p>Deine Spielstände werden mit deinem Supabase-Konto synchronisiert.</p>
+          <button class="secondary-button" id="migrate-local-data" type="button" hidden>Lokale Spielstände importieren</button>
           <button class="secondary-button" id="export-data" type="button">↓ Daten exportieren</button>
           <button class="secondary-button" id="import-data" type="button">↑ Sicherung importieren</button>
           <input class="visually-hidden" id="import-file" type="file" accept="application/json,.json" aria-label="JSON-Sicherung auswählen">
@@ -1147,7 +1197,7 @@
 
   <footer class="wrap">
     <span>Spielstand — damit der Spieleabend im Flow bleibt.</span>
-    <span>Deine Einträge bleiben lokal in diesem Browser.</span>
+    <span>Deine Einträge werden sicher in deinem Supabase-Konto gespeichert.</span>
   </footer>
 
   <script>
@@ -1156,17 +1206,29 @@
 
       const STORAGE_KEY = "spielstand.partien.v1";
       const PLAYERS_KEY = "spielstand.personen.v1";
+      const MIGRATION_KEY = "spielstand.supabase.migrations.v1";
       const BACKUP_FORMAT = "spielstand-backup";
+      const SUPABASE_URL = "https://cmhnqlgguikacbpsajee.supabase.co";
+      const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_xXDjAkxz6dhhLyknw9Sivw_2ftj52-h";
       const gameList = document.getElementById("game-list");
       const gameCount = document.getElementById("game-count");
       const scoreboard = document.getElementById("scoreboard");
       const notice = document.getElementById("notice");
+      const authPanel = document.getElementById("auth-panel");
+      const workspace = document.getElementById("workspace");
+      const connectionStatus = document.getElementById("connection-status");
+      const signOutButton = document.getElementById("sign-out");
       const playerFields = document.getElementById("player-fields");
       const newPlayerNameInput = document.getElementById("new-player-name");
       const availablePlayerSelect = document.getElementById("available-player");
       const startingPlayerSelect = document.getElementById("starting-player");
       const rosterHelp = document.getElementById("roster-help");
       const importFileInput = document.getElementById("import-file");
+      const eventTypeToDatabase = {
+        joker: "joker_from_discard",
+        threeAces: "three_aces",
+        twoAcesJoker: "two_aces_joker"
+      };
       const EVENT_TYPES = [
         { key: "joker", label: "Joker vom Ablagestapel aufgenommen" },
         { key: "threeAces", label: "3 Asse abgelegt" },
@@ -1174,8 +1236,126 @@
       ];
       let games = [];
       let playerNames = [];
+      let playersByName = new Map();
       let activeGameId = null;
       let playerDraft = [];
+      let session = null;
+      let currentUser = null;
+
+      function readSession() {
+        try {
+          const value = JSON.parse(localStorage.getItem("spielstand.supabase.session") || "null");
+          return value && typeof value.access_token === "string" && typeof value.refresh_token === "string"
+            ? value
+            : null;
+        } catch (error) {
+          throw new Error("Die gespeicherte Anmeldung konnte nicht gelesen werden. Bitte melde dich erneut an.");
+        }
+      }
+
+      function storeSession(value) {
+        session = value;
+        try {
+          if (value) {
+            localStorage.setItem("spielstand.supabase.session", JSON.stringify(value));
+          } else {
+            localStorage.removeItem("spielstand.supabase.session");
+          }
+        } catch (error) {
+          throw new Error("Die Anmeldung konnte nicht sicher in diesem Browser gespeichert werden.");
+        }
+      }
+
+      async function responseJson(response) {
+        const text = await response.text();
+        let payload = null;
+        if (text) {
+          try {
+            payload = JSON.parse(text);
+          } catch (error) {
+            payload = { message: text };
+          }
+        }
+        if (!response.ok) {
+          const message = payload?.msg || payload?.message || payload?.error_description || payload?.error || `HTTP ${response.status}`;
+          throw new Error(message);
+        }
+        return payload;
+      }
+
+      async function refreshSession() {
+        if (!session?.refresh_token) {
+          throw new Error("Deine Anmeldung ist abgelaufen. Bitte fordere einen neuen E-Mail-Link an.");
+        }
+        const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+          method: "POST",
+          headers: {
+            "apikey": SUPABASE_PUBLISHABLE_KEY,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ refresh_token: session.refresh_token })
+        });
+        const refreshed = await responseJson(response);
+        storeSession({
+          ...refreshed,
+          expires_at: Math.floor(Date.now() / 1000) + Number(refreshed.expires_in || 3600)
+        });
+      }
+
+      async function authenticatedFetch(path, options = {}) {
+        if (!session?.access_token) {
+          throw new Error("Bitte melde dich an, um auf deine Spielstände zuzugreifen.");
+        }
+        if (Number(session.expires_at || 0) <= Math.floor(Date.now() / 1000) + 60) {
+          await refreshSession();
+        }
+        const headers = new Headers(options.headers || {});
+        headers.set("apikey", SUPABASE_PUBLISHABLE_KEY);
+        headers.set("Authorization", `Bearer ${session.access_token}`);
+        if (options.body && !headers.has("Content-Type")) {
+          headers.set("Content-Type", "application/json");
+        }
+        const response = await fetch(`${SUPABASE_URL}${path}`, { ...options, headers });
+        return responseJson(response);
+      }
+
+      function restPath(table, query = "") {
+        return `/rest/v1/${table}${query ? `?${query}` : ""}`;
+      }
+
+      async function restGet(table, query = "") {
+        return authenticatedFetch(restPath(table, query));
+      }
+
+      async function restInsert(table, rows, query = "", prefer = "return=representation") {
+        return authenticatedFetch(restPath(table, query), {
+          method: "POST",
+          headers: { "Prefer": prefer },
+          body: JSON.stringify(rows)
+        });
+      }
+
+      async function restUpdate(table, query, values) {
+        return authenticatedFetch(restPath(table, query), {
+          method: "PATCH",
+          headers: { "Prefer": "return=minimal" },
+          body: JSON.stringify(values)
+        });
+      }
+
+      async function restDelete(table, query) {
+        return authenticatedFetch(restPath(table, query), {
+          method: "DELETE",
+          headers: { "Prefer": "return=minimal" }
+        });
+      }
+
+      function setAuthenticatedView(isAuthenticated) {
+        authPanel.hidden = isAuthenticated;
+        workspace.hidden = !isAuthenticated;
+        signOutButton.hidden = !isAuthenticated;
+        connectionStatus.textContent = isAuthenticated ? currentUser.email : "Mit Supabase verbinden";
+      }
 
       function showNotice(message, isError = false) {
         notice.textContent = message;
@@ -1183,17 +1363,6 @@
         notice.setAttribute("role", isError ? "alert" : "status");
         notice.setAttribute("aria-live", isError ? "assertive" : "polite");
         notice.hidden = !message;
-      }
-
-      function saveState() {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(games));
-          localStorage.setItem(PLAYERS_KEY, JSON.stringify(playerNames));
-          return true;
-        } catch (error) {
-          showNotice("Speichern im Browser ist fehlgeschlagen. Die Änderung bleibt möglicherweise nicht nach dem Schließen erhalten.", true);
-          return false;
-        }
       }
 
       function escapeHtml(value) {
@@ -1235,6 +1404,231 @@
           }
           return unique;
         }, []);
+      }
+
+      function localPlayerNames() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(PLAYERS_KEY) || "[]");
+          return Array.isArray(parsed) ? parsed.filter((name) => typeof name === "string") : [];
+        } catch (error) {
+          throw new Error("Die lokalen Spielerdaten konnten nicht gelesen werden.");
+        }
+      }
+
+      function localGames() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+          if (!Array.isArray(parsed)) {
+            throw new Error("Ungültiges Format");
+          }
+          const validGames = parsed.filter(isValidGame);
+          if (validGames.length !== parsed.length) {
+            throw new Error("Ungültige Spielstände");
+          }
+          return validGames.map(normalizeGame);
+        } catch (error) {
+          throw new Error("Die lokalen Spielstände konnten nicht gelesen werden. Exportiere oder repariere die lokale Sicherung, bevor du sie importierst.");
+        }
+      }
+
+      function playerId(name) {
+        return playersByName.get(playerKey(name))?.id || null;
+      }
+
+      async function ensurePlayer(name) {
+        const key = playerKey(name);
+        const existing = playersByName.get(key);
+        if (existing) {
+          return existing.id;
+        }
+        try {
+          const inserted = await restInsert("players", [{
+            owner_id: currentUser.id,
+            name: name.trim()
+          }]);
+          const player = inserted[0];
+          playersByName.set(key, player);
+          playerNames = uniquePlayers([...playerNames, player.name]);
+          return player.id;
+        } catch (error) {
+          if (error.message.includes("duplicate key") || error.message.includes("unique constraint")) {
+            await loadRemoteData();
+            const duplicate = playersByName.get(key);
+            if (duplicate) {
+              return duplicate.id;
+            }
+          }
+          throw error;
+        }
+      }
+
+      async function loadRemoteData() {
+        const [players, gameRows, memberships, roundRows, scoreRows, eventRows] = await Promise.all([
+          restGet("players", "select=id,name&order=name.asc"),
+          restGet("games", "select=id,name,starting_player_id,created_at&order=created_at.desc"),
+          restGet("game_players", "select=game_id,player_id,seat_order&order=seat_order.asc"),
+          restGet("rounds", "select=id,game_id,round_number,starter_player_id,winner_player_id&order=round_number.asc"),
+          restGet("round_scores", "select=round_id,player_id,points"),
+          restGet("round_events", "select=round_id,player_id,event_type")
+        ]);
+        playersByName = new Map(players.map((player) => [playerKey(player.name), player]));
+        playerNames = players.map((player) => player.name);
+
+        const playerById = new Map(players.map((player) => [player.id, player.name]));
+        const membershipsByGame = new Map();
+        memberships.forEach((membership) => {
+          if (!membershipsByGame.has(membership.game_id)) {
+            membershipsByGame.set(membership.game_id, []);
+          }
+          membershipsByGame.get(membership.game_id).push(membership);
+        });
+        const scoresByRound = new Map();
+        scoreRows.forEach((score) => {
+          if (!scoresByRound.has(score.round_id)) {
+            scoresByRound.set(score.round_id, new Map());
+          }
+          scoresByRound.get(score.round_id).set(score.player_id, Number(score.points));
+        });
+        const eventsByRound = new Map();
+        eventRows.forEach((event) => {
+          if (!eventsByRound.has(event.round_id)) {
+            eventsByRound.set(event.round_id, new Map());
+          }
+          eventsByRound.get(event.round_id).set(`${event.player_id}:${event.event_type}`, true);
+        });
+        const roundsByGame = new Map();
+        roundRows.forEach((round) => {
+          if (!roundsByGame.has(round.game_id)) {
+            roundsByGame.set(round.game_id, []);
+          }
+          roundsByGame.get(round.game_id).push(round);
+        });
+
+        games = gameRows.map((row) => {
+          const gameMemberships = membershipsByGame.get(row.id) || [];
+          const participants = gameMemberships.map((membership) => playerById.get(membership.player_id)).filter(Boolean);
+          const rounds = (roundsByGame.get(row.id) || []).map((round) => {
+            const roundScores = scoresByRound.get(round.id) || new Map();
+            const roundEvents = eventsByRound.get(round.id) || new Map();
+            return {
+              id: round.id,
+              roundNumber: Number(round.round_number),
+              starter: playerById.get(round.starter_player_id),
+              winner: playerById.get(round.winner_player_id),
+              scores: gameMemberships.map((membership) => roundScores.get(membership.player_id) || 0),
+              events: gameMemberships.map((membership) => Object.fromEntries(EVENT_TYPES.map((eventType) => [
+                eventType.key,
+                Boolean(roundEvents.get(`${membership.player_id}:${eventTypeToDatabase[eventType.key]}`))
+              ])))
+            };
+          });
+          return {
+            id: row.id,
+            name: row.name,
+            players: participants,
+            startingPlayer: playerById.get(row.starting_player_id),
+            rounds
+          };
+        }).filter(isValidGame);
+        if (activeGameId && !games.some((game) => game.id === activeGameId)) {
+          activeGameId = null;
+        }
+        activeGameId = activeGameId || games[0]?.id || null;
+        render();
+      }
+
+      function migrationIds() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(MIGRATION_KEY) || "{}");
+          return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+        } catch (error) {
+          throw new Error("Die lokale Importzuordnung ist beschädigt. Bitte exportiere zuerst deine Spielstände.");
+        }
+      }
+
+      function stableImportId(ids, key) {
+        if (!ids[key]) {
+          ids[key] = createId();
+          localStorage.setItem(MIGRATION_KEY, JSON.stringify(ids));
+        }
+        return ids[key];
+      }
+
+      async function importGamesToAccount(importedGames, importedPlayers, sourceKey) {
+        for (const name of uniquePlayers([...importedPlayers, ...importedGames.flatMap((game) => game.players)])) {
+          await ensurePlayer(name);
+        }
+        const ids = migrationIds();
+        for (const original of importedGames) {
+          const game = normalizeGame(original);
+          const remoteGameId = stableImportId(ids, `${sourceKey}:game:${game.id}`);
+          const startingPlayerId = playerId(game.startingPlayer);
+          if (!startingPlayerId) {
+            throw new Error(`Die Startperson „${game.startingPlayer}“ konnte nicht angelegt werden.`);
+          }
+          await restInsert("games", [{
+            id: remoteGameId,
+            owner_id: currentUser.id,
+            name: game.name || "Rommé",
+            starting_player_id: startingPlayerId
+          }], "on_conflict=id", "resolution=merge-duplicates,return=minimal");
+
+          const membershipRows = game.players.map((name, index) => ({
+            game_id: remoteGameId,
+            owner_id: currentUser.id,
+            player_id: playerId(name),
+            seat_order: index + 1
+          }));
+          await restInsert("game_players", membershipRows, "on_conflict=game_id,player_id", "resolution=merge-duplicates,return=minimal");
+
+          const roundRows = [];
+          const scoreRows = [];
+          const eventRows = [];
+          game.rounds.forEach((round, index) => {
+            const remoteRoundId = stableImportId(ids, `${sourceKey}:round:${game.id}:${round.id}`);
+            const starter = game.players.includes(round.starter)
+              ? round.starter
+              : game.players[(game.players.indexOf(game.startingPlayer) + index) % game.players.length];
+            const winner = game.players.includes(round.winner) ? round.winner : starter;
+            roundRows.push({
+              id: remoteRoundId,
+              game_id: remoteGameId,
+              owner_id: currentUser.id,
+              round_number: index + 1,
+              starter_player_id: playerId(starter),
+              winner_player_id: playerId(winner)
+            });
+            game.players.forEach((name, playerIndex) => {
+              scoreRows.push({
+                round_id: remoteRoundId,
+                game_id: remoteGameId,
+                owner_id: currentUser.id,
+                player_id: playerId(name),
+                points: round.scores[playerIndex] || 0
+              });
+              EVENT_TYPES.forEach((eventType) => {
+                if (round.events?.[playerIndex]?.[eventType.key]) {
+                  eventRows.push({
+                    round_id: remoteRoundId,
+                    game_id: remoteGameId,
+                    owner_id: currentUser.id,
+                    player_id: playerId(name),
+                    event_type: eventTypeToDatabase[eventType.key]
+                  });
+                }
+              });
+            });
+          });
+          if (roundRows.length) {
+            await restInsert("rounds", roundRows, "on_conflict=id", "resolution=merge-duplicates,return=minimal");
+          }
+          for (let offset = 0; offset < scoreRows.length; offset += 500) {
+            await restInsert("round_scores", scoreRows.slice(offset, offset + 500), "on_conflict=round_id,player_id", "resolution=merge-duplicates,return=minimal");
+          }
+          for (let offset = 0; offset < eventRows.length; offset += 500) {
+            await restInsert("round_events", eventRows.slice(offset, offset + 500), "on_conflict=round_id,player_id,event_type", "resolution=merge-duplicates,return=minimal");
+          }
+        }
       }
 
       function gameTotal(game, playerIndex) {
@@ -1525,35 +1919,119 @@
         renderScoreboard();
       }
 
-      function loadGames() {
+      async function authenticate(accessToken, refreshToken, expiresAt) {
+        storeSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          expires_at: Number(expiresAt) || Math.floor(Date.now() / 1000) + 3600
+        });
+        currentUser = await authenticatedFetch("/auth/v1/user");
+        if (!currentUser?.id || !currentUser.email) {
+          throw new Error("Supabase hat kein gültiges Benutzerkonto zurückgegeben.");
+        }
+        await loadRemoteData();
+        await updateMigrationButton();
+        setAuthenticatedView(true);
+      }
+
+      async function updateMigrationButton() {
+        const button = document.getElementById("migrate-local-data");
+        if (!currentUser) {
+          button.hidden = true;
+          return;
+        }
+        const importedKey = `spielstand.supabase.local-imported.${currentUser.id}`;
+        const hasImported = localStorage.getItem(importedKey) === "true";
+        const hasLocalData = Boolean(localStorage.getItem(STORAGE_KEY) || localStorage.getItem(PLAYERS_KEY));
+        button.hidden = hasImported || !hasLocalData;
+      }
+
+      async function initialize() {
         try {
-          const saved = localStorage.getItem(STORAGE_KEY);
-          const savedPlayers = localStorage.getItem(PLAYERS_KEY);
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            if (!Array.isArray(parsed)) {
-              throw new Error("Ungültiges Datenformat");
-            }
-            games = parsed.filter(isValidGame).map(normalizeGame);
-            if (parsed.length !== games.length) {
-              showNotice("Einige gespeicherte Partien konnten nicht geladen werden. Die übrigen Daten sind verfügbar.", true);
-            }
+          const callback = new URLSearchParams(window.location.hash.slice(1));
+          const callbackError = callback.get("error_description");
+          if (callbackError) {
+            history.replaceState(null, "", window.location.pathname + window.location.search);
+            throw new Error(callbackError.replace(/\+/g, " "));
           }
-          if (savedPlayers) {
-            const parsedPlayers = JSON.parse(savedPlayers);
-            if (!Array.isArray(parsedPlayers) || !parsedPlayers.every((name) => typeof name === "string")) {
-              throw new Error("Ungültige Spielerliste");
-            }
-            playerNames = uniquePlayers(parsedPlayers);
+          const accessToken = callback.get("access_token");
+          const refreshToken = callback.get("refresh_token");
+          if (accessToken && refreshToken) {
+            const expiresAt = callback.get("expires_at");
+            history.replaceState(null, "", window.location.pathname + window.location.search);
+            await authenticate(accessToken, refreshToken, expiresAt);
+            showNotice("Anmeldung erfolgreich. Deine Spielstände werden mit Supabase synchronisiert.");
+            return;
           }
-          playerNames = uniquePlayers([...playerNames, ...games.flatMap((game) => game.players)]);
-          activeGameId = games.length > 0 ? games[0].id : null;
+
+          session = readSession();
+          if (!session) {
+            setAuthenticatedView(false);
+            return;
+          }
+          currentUser = await authenticatedFetch("/auth/v1/user");
+          if (!currentUser?.id || !currentUser.email) {
+            throw new Error("Die gespeicherte Anmeldung ist ungültig. Bitte melde dich erneut an.");
+          }
+          await loadRemoteData();
+          await updateMigrationButton();
+          setAuthenticatedView(true);
         } catch (error) {
-          showNotice("Gespeicherte Spielstände konnten nicht gelesen werden. Der Browser-Speicher ist möglicherweise nicht verfügbar.", true);
+          if (!session) {
+            setAuthenticatedView(false);
+          }
+          showNotice(`Verbindung zu Supabase fehlgeschlagen: ${error.message}`, true);
         }
       }
 
-      document.getElementById("add-player").addEventListener("click", () => {
+      document.getElementById("auth-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (window.location.protocol === "file:") {
+          showNotice("Für die Anmeldung öffne bitte die veröffentlichte Website oder eine lokale Webadresse (http://localhost). Ein direkter file://-Aufruf kann E-Mail-Anmeldungen nicht sicher zurückleiten.", true);
+          return;
+        }
+        const email = document.getElementById("auth-email").value.trim();
+        const button = event.currentTarget.querySelector("button[type='submit']");
+        button.disabled = true;
+        try {
+          const redirectTo = `${window.location.origin}${window.location.pathname}`;
+          const url = `${SUPABASE_URL}/auth/v1/otp?redirect_to=${encodeURIComponent(redirectTo)}`;
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "apikey": SUPABASE_PUBLISHABLE_KEY,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email, create_user: true })
+          });
+          await responseJson(response);
+          showNotice("Anmeldelink gesendet. Öffne die E-Mail auf diesem Gerät und Browser, um die Anmeldung abzuschließen.");
+        } catch (error) {
+          showNotice(`Der Anmeldelink konnte nicht gesendet werden: ${error.message}`, true);
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      signOutButton.addEventListener("click", async () => {
+        try {
+          await authenticatedFetch("/auth/v1/logout", { method: "POST" });
+          storeSession(null);
+          currentUser = null;
+          games = [];
+          playerNames = [];
+          playersByName.clear();
+          activeGameId = null;
+          playerDraft = [];
+          setAuthenticatedView(false);
+          render();
+          showNotice("Du wurdest abgemeldet.");
+        } catch (error) {
+          showNotice(`Abmelden fehlgeschlagen: ${error.message}`, true);
+        }
+      });
+
+      document.getElementById("add-player").addEventListener("click", async () => {
         const name = newPlayerNameInput.value.trim();
         if (!name) {
           showNotice("Bitte gib einen Namen ein.", true);
@@ -1568,14 +2046,19 @@
           showNotice(`„${name}“ ist bereits in der Spielerliste. Wähle die vorhandene Person aus.`, true);
           return;
         }
-        playerNames.push(name);
-        playerDraft.push(name);
-        const saved = saveState();
-        renderPlayerFields();
-        newPlayerNameInput.value = "";
-        newPlayerNameInput.focus();
-        if (saved) {
+        const button = document.getElementById("add-player");
+        button.disabled = true;
+        try {
+          await ensurePlayer(name);
+          playerDraft.push(name);
+          renderPlayerFields();
+          newPlayerNameInput.value = "";
+          newPlayerNameInput.focus();
           showNotice(`${name} zur gemeinsamen Spielerliste hinzugefügt und für diese Partie ausgewählt.`);
+        } catch (error) {
+          showNotice(`Person konnte nicht gespeichert werden: ${error.message}`, true);
+        } finally {
+          button.disabled = false;
         }
       });
 
@@ -1602,7 +2085,7 @@
         renderPlayerFields();
       });
 
-      document.getElementById("new-game-form").addEventListener("submit", (event) => {
+      document.getElementById("new-game-form").addEventListener("submit", async (event) => {
         event.preventDefault();
         const players = [...playerDraft];
         const startingPlayer = startingPlayerSelect.value;
@@ -1615,15 +2098,42 @@
           return;
         }
 
-        const game = { id: createId(), name: "Rommé", players, startingPlayer, rounds: [] };
-        games.unshift(game);
-        activeGameId = game.id;
-        const saved = saveState();
-        render();
-        playerDraft = [];
-        renderPlayerFields();
-        if (saved) {
+        const submitButton = event.currentTarget.querySelector("button[type='submit']");
+        submitButton.disabled = true;
+        let insertedGameId = null;
+        try {
+          const participantIds = await Promise.all(players.map(ensurePlayer));
+          const inserted = await restInsert("games", [{
+            owner_id: currentUser.id,
+            name: "Rommé",
+            starting_player_id: playerId(startingPlayer)
+          }]);
+          insertedGameId = inserted[0].id;
+          await restInsert("game_players", players.map((_, index) => ({
+            game_id: insertedGameId,
+            owner_id: currentUser.id,
+            player_id: participantIds[index],
+            seat_order: index + 1
+          })), "", "return=minimal");
+          const game = { id: insertedGameId, name: "Rommé", players, startingPlayer, rounds: [] };
+          games.unshift(game);
+          activeGameId = game.id;
+          playerDraft = [];
+          render();
           showNotice(`Rommé-Partie gestartet. ${startingPlayer} beginnt; die Startposition rotiert in der eingegebenen Reihenfolge.`);
+        } catch (error) {
+          if (insertedGameId) {
+            try {
+              await restDelete("games", `id=eq.${encodeURIComponent(insertedGameId)}`);
+            } catch (cleanupError) {
+              showNotice(`Partie konnte nicht vollständig angelegt werden: ${error.message}. Unvollständige Partie ${insertedGameId} konnte nicht automatisch entfernt werden: ${cleanupError.message}`, true);
+              return;
+            }
+          }
+          showNotice(`Partie konnte nicht gespeichert werden: ${error.message}`, true);
+        } finally {
+          submitButton.disabled = false;
+          renderPlayerFields();
         }
       });
 
@@ -1637,7 +2147,7 @@
         render();
       });
 
-      scoreboard.addEventListener("submit", (event) => {
+      scoreboard.addEventListener("submit", async (event) => {
         if (event.target.id !== "round-form") {
           return;
         }
@@ -1666,27 +2176,79 @@
           ]))
         );
         const starter = game.players[(game.players.indexOf(game.startingPlayer) + game.rounds.length) % game.players.length];
-        game.rounds.push({ id: createId(), scores, winner, starter, events });
-        const roundNumber = game.rounds.length;
-        const saved = saveState();
-        render();
-        if (saved) {
+        const roundId = createId();
+        const roundNumber = game.rounds.length + 1;
+        const roundButton = event.target.querySelector("button[type='submit']");
+        roundButton.disabled = true;
+        let roundInserted = false;
+        try {
+          await restInsert("rounds", [{
+            id: roundId,
+            game_id: game.id,
+            owner_id: currentUser.id,
+            round_number: roundNumber,
+            starter_player_id: playerId(starter),
+            winner_player_id: playerId(winner)
+          }], "", "return=minimal");
+          roundInserted = true;
+          await restInsert("round_scores", game.players.map((name, index) => ({
+            round_id: roundId,
+            game_id: game.id,
+            owner_id: currentUser.id,
+            player_id: playerId(name),
+            points: scores[index]
+          })), "", "return=minimal");
+          const roundEventRows = [];
+          game.players.forEach((name, playerIndex) => {
+            EVENT_TYPES.forEach((eventType) => {
+              if (events[playerIndex][eventType.key]) {
+                roundEventRows.push({
+                  round_id: roundId,
+                  game_id: game.id,
+                  owner_id: currentUser.id,
+                  player_id: playerId(name),
+                  event_type: eventTypeToDatabase[eventType.key]
+                });
+              }
+            });
+          });
+          if (roundEventRows.length) {
+            await restInsert("round_events", roundEventRows, "", "return=minimal");
+          }
+          game.rounds.push({ id: roundId, roundNumber, scores, winner, starter, events });
+          render();
           showNotice(`Runde ${roundNumber} gespeichert. Punkte, Rundensieg und Rommé-Statistik aktualisiert.`);
+        } catch (error) {
+          if (roundInserted) {
+            try {
+              await restDelete("rounds", `id=eq.${encodeURIComponent(roundId)}`);
+            } catch (cleanupError) {
+              showNotice(`Runde konnte nicht vollständig gespeichert werden: ${error.message}. Die unvollständige Runde konnte nicht automatisch entfernt werden: ${cleanupError.message}`, true);
+              return;
+            }
+          }
+          showNotice(`Runde konnte nicht gespeichert werden: ${error.message}`, true);
+        } finally {
+          roundButton.disabled = false;
         }
       });
 
-      scoreboard.addEventListener("click", (event) => {
+      scoreboard.addEventListener("click", async (event) => {
         if (event.target.id === "delete-game") {
           const game = getActiveGame();
           if (!game || !window.confirm(`Möchtest du die Partie „${game.name}“ mit allen Runden wirklich löschen?`)) {
             return;
           }
-          games = games.filter((item) => item.id !== game.id);
-          activeGameId = games.length > 0 ? games[0].id : null;
-          const saved = saveState();
-          render();
-          if (saved) {
+          event.target.disabled = true;
+          try {
+            await restDelete("games", `id=eq.${encodeURIComponent(game.id)}`);
+            games = games.filter((item) => item.id !== game.id);
+            activeGameId = games.length > 0 ? games[0].id : null;
+            render();
             showNotice("Partie mit allen Runden gelöscht.");
+          } catch (error) {
+            showNotice(`Partie konnte nicht gelöscht werden: ${error.message}`, true);
+            event.target.disabled = false;
           }
           return;
         }
@@ -1697,11 +2259,36 @@
           if (!game) {
             return;
           }
-          game.rounds = game.rounds.filter((round) => round.id !== deleteButton.dataset.removeRound);
-          const saved = saveState();
-          render();
-          if (saved) {
+          const round = game.rounds.find((item) => item.id === deleteButton.dataset.removeRound);
+          if (!round || !window.confirm(`Runde ${round.roundNumber || game.rounds.indexOf(round) + 1} aus „${game.name}“ mit Punkten und Ereignissen wirklich löschen?`)) {
+            return;
+          }
+          deleteButton.disabled = true;
+          try {
+            await restDelete("rounds", `id=eq.${encodeURIComponent(round.id)}`);
+            const remainingRounds = game.rounds.filter((item) => item.id !== round.id);
+            const startIndex = game.players.indexOf(game.startingPlayer);
+            try {
+              for (let index = 0; index < remainingRounds.length; index += 1) {
+                const nextRound = remainingRounds[index];
+                const starter = game.players[(startIndex + index) % game.players.length];
+                await restUpdate("rounds", `id=eq.${encodeURIComponent(nextRound.id)}`, {
+                  round_number: index + 1,
+                  starter_player_id: playerId(starter)
+                });
+                nextRound.roundNumber = index + 1;
+                nextRound.starter = starter;
+              }
+            } catch (renumberError) {
+              await loadRemoteData();
+              throw new Error(`Runde wurde gelöscht, aber die Folge-Runden konnten nicht neu nummeriert werden: ${renumberError.message}`);
+            }
+            game.rounds = remainingRounds;
+            render();
             showNotice("Runde gelöscht. Punkte, Rundensiege und Ereignisstatistik wurden neu berechnet.");
+          } catch (error) {
+            showNotice(`Runde konnte nicht vollständig gelöscht werden: ${error.message}`, true);
+            deleteButton.disabled = false;
           }
         }
       });
@@ -1737,32 +2324,41 @@
         }
         try {
           const imported = parseBackup(JSON.parse(await file.text()));
-          if (!window.confirm(`${imported.games.length} ${imported.games.length === 1 ? "Partie wird" : "Partien werden"} importiert und ersetzen alle aktuell gespeicherten Partien sowie die Spielerliste. Fortfahren?`)) {
+          if (!window.confirm(`${imported.games.length} ${imported.games.length === 1 ? "Partie wird" : "Partien werden"} zusätzlich in dein Supabase-Konto importiert. Vorhandene Spielstände bleiben erhalten. Fortfahren?`)) {
             showNotice("Import abgebrochen.");
             return;
           }
-          const previousGames = games;
-          const previousPlayers = playerNames;
-          games = imported.games;
-          playerNames = imported.players;
-          activeGameId = games.length > 0 ? games[0].id : null;
-          const saved = saveState();
-          if (!saved) {
-            games = previousGames;
-            playerNames = previousPlayers;
-            activeGameId = games.length > 0 ? games[0].id : null;
-            render();
-            return;
-          }
-          render();
-          showNotice(`${games.length} ${games.length === 1 ? "Partie importiert." : "Partien importiert."}`);
+          await importGamesToAccount(imported.games, imported.players, `backup:${createId()}`);
+          await loadRemoteData();
+          await updateMigrationButton();
+          showNotice(`${imported.games.length} ${imported.games.length === 1 ? "Partie wurde" : "Partien wurden"} in dein Supabase-Konto importiert.`);
         } catch (error) {
           showNotice(error instanceof SyntaxError ? "Die Datei enthält kein gültiges JSON." : error.message || "Die Sicherungsdatei konnte nicht importiert werden.", true);
         }
       });
 
-      loadGames();
-      render();
+      document.getElementById("migrate-local-data").addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        try {
+          const savedGames = localGames();
+          const savedPlayers = localPlayerNames();
+          if (!window.confirm(`${savedGames.length} lokale ${savedGames.length === 1 ? "Partie" : "Partien"} und ${savedPlayers.length} Personen werden in dein Konto kopiert. Die lokalen Daten bleiben unverändert. Fortfahren?`)) {
+            return;
+          }
+          button.disabled = true;
+          await importGamesToAccount(savedGames, savedPlayers, "local");
+          localStorage.setItem(`spielstand.supabase.local-imported.${currentUser.id}`, "true");
+          await loadRemoteData();
+          await updateMigrationButton();
+          showNotice("Deine lokalen Spielstände wurden in Supabase übernommen. Die lokale Sicherung bleibt auf diesem Gerät erhalten.");
+        } catch (error) {
+          showNotice(`Lokale Spielstände konnten nicht vollständig importiert werden. Du kannst den Import erneut versuchen: ${error.message}`, true);
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      initialize();
     })();
   </script>
 </body>
