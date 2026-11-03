@@ -1179,7 +1179,7 @@
       spielstand
     </a>
     <div class="auth-actions">
-      <span class="local-label" id="connection-status">Mit Supabase verbinden</span>
+      <span class="local-label" id="connection-status">Nicht verbunden</span>
       <button class="secondary-button" id="sign-out" type="button" hidden>Abmelden</button>
     </div>
   </header>
@@ -1194,14 +1194,12 @@
     <div class="notice" id="notice" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
     <section class="panel auth-panel" id="auth-panel" aria-labelledby="auth-title">
-      <h2 id="auth-title">Einmal registrieren</h2>
-      <p>Trage deinen Namen und deine E-Mail-Adresse ein. Bestätige die Adresse einmal über den Link in deiner E-Mail; danach bleibst du angemeldet und wirst als Spieler angelegt.</p>
+      <h2 id="auth-title">Mit Namen starten</h2>
+      <p>Gib deinen Spielernamen ein. Eine E-Mail-Adresse oder ein Passwort brauchst du nicht. Deine Anmeldung wird anonym in diesem Browser gespeichert und lässt sich auf anderen Geräten nicht wiederherstellen.</p>
       <form id="auth-form">
         <label class="field-label" for="auth-name">Dein Spielername</label>
         <input class="text-input" id="auth-name" name="name" maxlength="40" autocomplete="name" required>
-        <label class="field-label" for="auth-email">E-Mail-Adresse</label>
-        <input class="text-input" id="auth-email" name="email" type="email" maxlength="254" autocomplete="email" required>
-        <button class="button" type="submit">Einmalig registrieren <span aria-hidden="true">→</span></button>
+        <button class="button" type="submit">Mit Namen starten <span aria-hidden="true">→</span></button>
       </form>
       <div id="local-backup-actions" hidden>
         <p>Auf diesem Gerät liegen noch Spielstände aus der früheren lokalen Version.</p>
@@ -1248,7 +1246,7 @@
 
         <section class="panel data-tools" aria-labelledby="data-tools-title">
           <h2 id="data-tools-title">Daten sichern</h2>
-          <p>Deine Spielstände werden mit deinem Supabase-Konto synchronisiert.</p>
+          <p>Deine Spielstände werden sicher in Supabase gespeichert.</p>
           <button class="secondary-button" id="migrate-local-data" type="button" hidden>Lokale Spielstände importieren</button>
           <button class="secondary-button" id="export-data" type="button">↓ Daten exportieren</button>
           <button class="secondary-button" id="import-data" type="button">↑ Sicherung importieren</button>
@@ -1278,7 +1276,7 @@
 
   <footer class="wrap">
     <span>Spielstand — damit der Spieleabend im Flow bleibt.</span>
-    <span>Deine Einträge werden sicher in deinem Supabase-Konto gespeichert.</span>
+    <span>Deine Einträge werden sicher in Supabase gespeichert.</span>
   </footer>
 
   <script>
@@ -1393,7 +1391,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
       async function refreshSession() {
         if (!session?.refresh_token) {
-          throw new Error("Deine Anmeldung ist abgelaufen. Bitte fordere einen neuen E-Mail-Link an.");
+          throw new Error("Deine Sitzung ist abgelaufen. Eine anonyme Anmeldung kann ohne E-Mail nicht wiederhergestellt werden.");
         }
         const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
           method: "POST",
@@ -1463,7 +1461,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         workspace.hidden = !isAuthenticated;
         signOutButton.hidden = !isAuthenticated;
         document.getElementById("local-backup-actions").hidden = isAuthenticated;
-        connectionStatus.textContent = isAuthenticated ? currentUser.email : "Mit Supabase verbinden";
+        connectionStatus.textContent = isAuthenticated
+          ? currentPlayer?.name || currentUser?.user_metadata?.display_name || "Angemeldet"
+          : "Nicht verbunden";
       }
 
       function showNotice(message, isError = false) {
@@ -1716,8 +1716,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const shareDialog = document.getElementById("share-dialog");
         document.getElementById("share-url").value = url;
         document.getElementById("share-permission-description").textContent = game.invitePermission === "editor"
-          ? "Wer diesen Link öffnet und sich einmal registriert, kann der Partie beitreten, Runden eintragen und Runden löschen."
-          : "Wer diesen Link öffnet und sich einmal registriert, kann der Partie beitreten und den Spielstand ansehen, aber nichts bearbeiten.";
+          ? "Wer diesen Link öffnet und einen Namen eingibt, kann der Partie beitreten, Runden eintragen und Runden löschen."
+          : "Wer diesen Link öffnet und einen Namen eingibt, kann der Partie beitreten und den Spielstand ansehen, aber nichts bearbeiten.";
         const qr = qrcode(0, "M");
         qr.addData(url, "Byte");
         qr.make();
@@ -2108,27 +2108,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         renderScoreboard();
       }
 
-      async function authenticate(accessToken, refreshToken, expiresAt) {
+      async function authenticate(accessToken, refreshToken, expiresAt, fallbackName = "") {
         storeSession({
           access_token: accessToken,
           refresh_token: refreshToken,
           expires_at: Number(expiresAt) || Math.floor(Date.now() / 1000) + 3600
         });
         currentUser = await authenticatedFetch("/auth/v1/user");
-        if (!currentUser?.id || !currentUser.email) {
+        if (!currentUser?.id) {
           throw new Error("Supabase hat kein gültiges Benutzerkonto zurückgegeben.");
         }
-        let displayName = currentUser.user_metadata?.display_name || localStorage.getItem(PENDING_NAME_KEY) || "";
+        let displayName = currentUser.user_metadata?.display_name || fallbackName || localStorage.getItem(PENDING_NAME_KEY) || "";
         if (!displayName) {
           const ownPlayers = await restGet("players", "select=id,owner_id,name&order=created_at.asc");
           displayName = ownPlayers.find((player) => player.owner_id === currentUser.id)?.name || "";
         }
         if (!displayName) {
-          document.getElementById("auth-email").value = currentUser.email;
-          document.getElementById("auth-email").readOnly = true;
           authNameInput.focus();
           setAuthenticatedView(false);
-          showNotice("Deine bestätigte E-Mail ist angemeldet. Gib noch deinen Spielernamen ein, damit dein Profil angelegt werden kann.");
+          showNotice("Gib deinen Spielernamen ein, damit dein Spielerprofil angelegt werden kann.");
           return;
         }
         await completeProfile(displayName);
@@ -2221,7 +2219,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             return;
           }
           currentUser = await authenticatedFetch("/auth/v1/user");
-          if (!currentUser?.id || !currentUser.email) {
+          if (!currentUser?.id) {
             throw new Error("Die gespeicherte Anmeldung ist ungültig. Bitte melde dich erneut an.");
           }
           const displayName = currentUser.user_metadata?.display_name || localStorage.getItem(PENDING_NAME_KEY) || "";
@@ -2234,11 +2232,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             if (savedPlayer) {
               await completeProfile(savedPlayer.name);
             } else {
-              document.getElementById("auth-email").value = currentUser.email;
-              document.getElementById("auth-email").readOnly = true;
               setAuthenticatedView(false);
               updateLocalExportButton();
-              showNotice("Gib deinen Spielernamen ein, um dein Konto einmalig als Spieler einzurichten.");
+              showNotice("Gib deinen Spielernamen ein, um dein Spielerprofil einzurichten.");
               return;
             }
           }
@@ -2257,11 +2253,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       document.getElementById("auth-form").addEventListener("submit", async (event) => {
         event.preventDefault();
         if (window.location.protocol === "file:") {
-          showNotice("Für die Registrierung öffne bitte die veröffentlichte Website oder eine lokale Webadresse (http://localhost). Ein direkter file://-Aufruf kann die E-Mail-Bestätigung nicht sicher zurückleiten.", true);
+          showNotice("Für die Anmeldung öffne bitte die veröffentlichte Website oder eine lokale Webadresse (http://localhost). Ein direkter file://-Aufruf kann keine sichere Supabase-Verbindung herstellen.", true);
           return;
         }
         const displayName = authNameInput.value.trim();
-        const email = document.getElementById("auth-email").value.trim();
         if (!displayName || displayName.length > 40) {
           showNotice("Dein Spielername muss zwischen 1 und 40 Zeichen lang sein.", true);
           authNameInput.focus();
@@ -2276,32 +2271,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             await loadRemoteData();
             await updateMigrationButton();
             setAuthenticatedView(true);
-            showNotice(`Du bist als ${currentPlayer.name} registriert. Dein Spielerprofil bleibt mit deinem Konto verknüpft.`);
+            showNotice(`Du bist als ${currentPlayer.name} angemeldet. Dein Spielerprofil ist mit diesem Browser verknüpft.`);
             return;
           }
 
-          localStorage.setItem(PENDING_NAME_KEY, displayName);
-          const redirectTo = `${window.location.origin}${window.location.pathname}`;
-          const inviteToken = new URLSearchParams(window.location.search).get("join");
-          const redirectUrl = new URL(redirectTo);
-          if (inviteToken) {
-            redirectUrl.searchParams.set("join", inviteToken);
-          }
-          const url = `${SUPABASE_URL}/auth/v1/otp?redirect_to=${encodeURIComponent(redirectUrl.toString())}`;
-          const response = await fetch(url, {
+          const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
             method: "POST",
             headers: {
               "apikey": SUPABASE_PUBLISHABLE_KEY,
               "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-              email,
-              create_user: true,
-              data: { display_name: displayName }
-            })
+            body: JSON.stringify({ data: { display_name: displayName } })
           });
-          await responseJson(response);
-          showNotice("Bestätigungslink gesendet. Öffne ihn einmal, um dein Konto anzulegen. Danach bleibst du angemeldet.");
+          const registration = await responseJson(response);
+          if (!registration.access_token || !registration.refresh_token || !registration.user?.id) {
+            throw new Error("Supabase hat keine gültige Sitzung für die Namensanmeldung zurückgegeben.");
+          }
+          const expiresAt = registration.expires_at ||
+            Math.floor(Date.now() / 1000) + Number(registration.expires_in || 3600);
+          await authenticate(registration.access_token, registration.refresh_token, expiresAt, displayName);
+          showNotice(`Du bist als ${currentPlayer?.name || displayName} angemeldet. Dein Spielerprofil ist mit diesem Browser verknüpft.`);
         } catch (error) {
           showNotice(`Die Registrierung konnte nicht abgeschlossen werden: ${error.message}`, true);
         } finally {
