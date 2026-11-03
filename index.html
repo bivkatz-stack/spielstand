@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10110f">
-  <meta name="description" content="Spielstände für Gesellschaftsspiele einfach eintragen, vergleichen und lokal speichern.">
-  <title>Spielstand — Alle Punkte im Blick</title>
+  <meta name="description" content="Rommé-Punkte, Rundensieger und Kartenereignisse pro Person und Runde erfassen.">
+  <title>Spielstand — Rommé im Blick</title>
   <style>
     :root {
       color-scheme: dark;
@@ -377,6 +377,62 @@
       align-items: center;
     }
 
+    .player-add-row,
+    .roster-add-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: end;
+      margin-top: 12px;
+    }
+
+    .roster-add-row {
+      margin-top: 8px;
+    }
+
+    .roster-list {
+      display: grid;
+      gap: 7px;
+      margin: 12px 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .roster-entry {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 8px 7px 11px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .02);
+      font-size: 12px;
+    }
+
+    .roster-entry-name {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .roster-position {
+      flex: 0 0 auto;
+      margin-right: 7px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .roster-empty {
+      margin: 12px 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .start-select {
+      margin-top: 14px;
+    }
+
     .remove-player {
       width: 34px;
       height: 38px;
@@ -555,45 +611,6 @@
       color: var(--danger);
     }
 
-    .edit-panel {
-      padding: 19px 23px;
-      border-bottom: 1px solid var(--line);
-      background: rgba(255, 255, 255, .02);
-    }
-
-    .edit-panel[hidden] {
-      display: none;
-    }
-
-    .edit-panel h3 {
-      margin: 0 0 14px;
-      font-size: 14px;
-    }
-
-    .edit-game-form {
-      display: grid;
-      gap: 13px;
-    }
-
-    .edit-game-form .player-fields {
-      margin: 0;
-    }
-
-    .edit-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 9px;
-    }
-
-    .edit-actions .secondary-button {
-      min-height: 43px;
-      padding-inline: 14px;
-    }
-
-    .edit-rule {
-      max-width: 100%;
-    }
-
     .score-section {
       padding: 21px 23px 24px;
     }
@@ -696,13 +713,128 @@
 
     .round-form {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(115px, 1fr)) auto;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
       align-items: end;
       padding: 17px;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: rgba(255, 255, 255, .02);
+    }
+
+    .round-form > .round-context,
+    .round-form > .round-fields,
+    .round-form > .event-title,
+    .round-form > .event-hint,
+    .round-form > .event-table-wrap,
+    .round-form > .button {
+      grid-column: 1 / -1;
+    }
+
+    .round-form-score-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+      gap: 10px;
+    }
+
+    .round-form > .button {
+      justify-self: start;
+    }
+
+    .round-context {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .round-context .text-input {
+      min-height: 40px;
+    }
+
+    .event-title {
+      margin: 22px 0 9px;
+      font-size: 13px;
+    }
+
+    .event-hint {
+      margin: -3px 0 11px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .event-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overscroll-behavior-inline: contain;
+    }
+
+    .event-table {
+      width: 100%;
+      min-width: 510px;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .event-table th,
+    .event-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 11px;
+    }
+
+    .event-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .event-table th {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 650;
+      line-height: 1.4;
+    }
+
+    .event-table th:first-child,
+    .event-table td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: var(--surface);
+    }
+
+    .event-table th:first-child {
+      z-index: 2;
+      background: #1c1e1a;
+    }
+
+    .event-check {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .stats-heading {
+      margin: 28px 0 12px;
+      font-size: 13px;
+    }
+
+    .stats-table {
+      min-width: 550px;
+    }
+
+    .winner-name {
+      color: var(--accent);
+      font-weight: 650;
+    }
+
+    .round-details {
+      min-width: 150px;
+      color: var(--muted);
+      font-size: 10px !important;
+      line-height: 1.5;
     }
 
     .round-field label {
@@ -812,8 +944,14 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      .round-form .button {
-        grid-column: 1 / -1;
+      .player-add-row,
+      .roster-add-row {
+        grid-template-columns: 1fr;
+      }
+
+      .player-add-row .secondary-button,
+      .roster-add-row .secondary-button {
+        width: 100%;
       }
     }
 
@@ -859,10 +997,6 @@
       .board-actions {
         align-self: stretch;
         justify-content: flex-start;
-      }
-
-      .edit-panel {
-        padding-inline: 16px;
       }
 
       .score-summary-desktop {
@@ -914,6 +1048,10 @@
         padding: 11px 10px;
       }
 
+      .round-context {
+        grid-template-columns: 1fr;
+      }
+
       .round-form {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
@@ -949,9 +1087,9 @@
 
   <main class="wrap">
     <section class="intro" aria-labelledby="page-title">
-      <span class="eyebrow">Der Spieleabend bleibt im Blick</span>
-      <h1 id="page-title">Punkte zählen.<br><span>Weiter spielen.</span></h1>
-      <p>Lege eine Partie für jedes Gesellschaftsspiel an, trage die Punkte pro Runde ein und behalte den Gesamtstand automatisch im Blick.</p>
+      <span class="eyebrow">Rommé im Blick</span>
+      <h1 id="page-title">Jede Runde zählt.<br><span>Jeder Punkt bleibt.</span></h1>
+      <p>Verfolge Startreihenfolge, Rundensieger, Punkte und besondere Kartenereignisse – mit einer gemeinsamen Spielerliste für alle Partien.</p>
     </section>
 
     <div class="notice" id="notice" role="status" aria-live="polite" aria-atomic="true" hidden></div>
@@ -967,31 +1105,30 @@
         </section>
 
         <form class="panel new-game" id="new-game-form">
-          <h2>Neue Partie</h2>
-          <p class="form-hint">Wähle ein Spiel und trage alle Mitspielenden ein.</p>
-          <label class="field-label" for="game-name">Gesellschaftsspiel</label>
-          <input class="text-input" id="game-name" name="gameName" list="game-suggestions" placeholder="z. B. Catan" maxlength="60" required>
-          <datalist id="game-suggestions">
-            <option value="Catan"></option>
-            <option value="Wizard"></option>
-            <option value="Qwixx"></option>
-            <option value="Kniffel"></option>
-            <option value="Skip-Bo"></option>
-            <option value="Uno"></option>
-          </datalist>
-          <label class="field-label" for="scoring-mode" style="margin-top: 14px;">Wertung</label>
-          <select class="text-input" id="scoring-mode" name="scoringMode">
-            <option value="high">Höchste Punktzahl gewinnt</option>
-            <option value="low">Niedrigste Punktzahl gewinnt</option>
+          <h2>Neue Rommé-Partie</h2>
+          <p class="form-hint">Lege Personen einmal an und wähle sie für jede Partie wieder aus.</p>
+          <label class="field-label" for="new-player-name">Spielerin oder Spieler anlegen</label>
+          <div class="player-add-row">
+            <input class="text-input" id="new-player-name" maxlength="40" placeholder="Name eingeben" autocomplete="off">
+            <button class="secondary-button" id="add-player" type="button">＋ Hinzufügen</button>
+          </div>
+          <label class="field-label" for="available-player" style="margin-top: 17px;">Mitspielende in Reihenfolge auswählen</label>
+          <div class="roster-add-row">
+            <select class="text-input" id="available-player" aria-label="Vorhandene Person auswählen"></select>
+            <button class="secondary-button" id="add-to-roster" type="button">Zur Partie</button>
+          </div>
+          <ol class="roster-list" id="player-fields" aria-label="Mitspielende dieser Partie"></ol>
+          <p class="roster-empty" id="roster-help">Füge mindestens zwei Personen hinzu. Die Reihenfolge bestimmt, wie der Start nach jeder Runde rotiert.</p>
+          <label class="field-label start-select" for="starting-player">Wer beginnt diese Partie?</label>
+          <select class="text-input" id="starting-player" required disabled>
+            <option value="">Zuerst Mitspielende auswählen</option>
           </select>
-          <div class="player-fields" id="player-fields" aria-label="Mitspielende"></div>
-          <button class="secondary-button" id="add-player" type="button">＋ Person hinzufügen</button>
-          <button class="button button-full" type="submit" style="margin-top: 14px;">Partie starten <span aria-hidden="true">→</span></button>
+          <button class="button button-full" type="submit" style="margin-top: 16px;">Rommé-Partie starten <span aria-hidden="true">→</span></button>
         </form>
 
         <section class="panel data-tools" aria-labelledby="data-tools-title">
           <h2 id="data-tools-title">Daten sichern</h2>
-          <p>Exportiere deine Partien oder stelle eine Sicherung wieder her.</p>
+          <p>Sichere deine Partien und die gemeinsame Spielerliste.</p>
           <button class="secondary-button" id="export-data" type="button">↓ Daten exportieren</button>
           <button class="secondary-button" id="import-data" type="button">↑ Sicherung importieren</button>
           <input class="visually-hidden" id="import-file" type="file" accept="application/json,.json" aria-label="JSON-Sicherung auswählen">
@@ -1018,19 +1155,27 @@
       "use strict";
 
       const STORAGE_KEY = "spielstand.partien.v1";
+      const PLAYERS_KEY = "spielstand.personen.v1";
       const BACKUP_FORMAT = "spielstand-backup";
       const gameList = document.getElementById("game-list");
       const gameCount = document.getElementById("game-count");
       const scoreboard = document.getElementById("scoreboard");
       const notice = document.getElementById("notice");
       const playerFields = document.getElementById("player-fields");
-      const gameNameInput = document.getElementById("game-name");
-      const scoringModeInput = document.getElementById("scoring-mode");
+      const newPlayerNameInput = document.getElementById("new-player-name");
+      const availablePlayerSelect = document.getElementById("available-player");
+      const startingPlayerSelect = document.getElementById("starting-player");
+      const rosterHelp = document.getElementById("roster-help");
       const importFileInput = document.getElementById("import-file");
+      const EVENT_TYPES = [
+        { key: "joker", label: "Joker vom Ablagestapel aufgenommen" },
+        { key: "threeAces", label: "3 Asse abgelegt" },
+        { key: "twoAcesJoker", label: "2 Asse + Joker abgelegt" }
+      ];
       let games = [];
+      let playerNames = [];
       let activeGameId = null;
-      let playerDraft = ["Spieler 1", "Spieler 2"];
-      let editDraft = null;
+      let playerDraft = [];
 
       function showNotice(message, isError = false) {
         notice.textContent = message;
@@ -1040,12 +1185,13 @@
         notice.hidden = !message;
       }
 
-      function saveGames() {
+      function saveState() {
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(games));
+          localStorage.setItem(PLAYERS_KEY, JSON.stringify(playerNames));
           return true;
         } catch (error) {
-          showNotice("Speichern im Browser ist fehlgeschlagen. Die Änderungen bleiben vorerst nur bis zum Schließen dieser Seite erhalten.", true);
+          showNotice("Speichern im Browser ist fehlgeschlagen. Die Änderung bleibt möglicherweise nicht nach dem Schließen erhalten.", true);
           return false;
         }
       }
@@ -1071,8 +1217,32 @@
         return games.find((game) => game.id === activeGameId) || null;
       }
 
+      function playerKey(name) {
+        return name.trim().normalize("NFC").toLocaleLowerCase("de-DE");
+      }
+
+      function uniquePlayers(names) {
+        const seen = new Set();
+        return names.reduce((unique, rawName) => {
+          if (typeof rawName !== "string") {
+            return unique;
+          }
+          const name = rawName.trim();
+          const key = playerKey(name);
+          if (name && !seen.has(key)) {
+            seen.add(key);
+            unique.push(name);
+          }
+          return unique;
+        }, []);
+      }
+
       function gameTotal(game, playerIndex) {
-        return game.rounds.reduce((sum, round) => sum + round.scores[playerIndex], 0);
+        return game.rounds.reduce((sum, round) => sum + (round.scores[playerIndex] || 0), 0);
+      }
+
+      function eventTotal(game, playerIndex, eventKey) {
+        return game.rounds.reduce((sum, round) => sum + (round.events?.[playerIndex]?.[eventKey] ? 1 : 0), 0);
       }
 
       function isValidGame(game) {
@@ -1087,6 +1257,7 @@
           game.players.length >= 2 &&
           game.players.length <= 20 &&
           game.players.every((player) => typeof player === "string" && player.trim().length > 0 && player.length <= 40) &&
+          new Set(game.players.map(playerKey)).size === game.players.length &&
           Array.isArray(game.rounds) &&
           game.rounds.length <= 10000 &&
           game.rounds.every((round) =>
@@ -1095,35 +1266,72 @@
             round.id.length > 0 &&
             Array.isArray(round.scores) &&
             round.scores.length === game.players.length &&
-            round.scores.every((score) => typeof score === "number" && Number.isFinite(score))
-          ) &&
-          (game.scoringMode === undefined || game.scoringMode === "high" || game.scoringMode === "low")
+            round.scores.every((score) => typeof score === "number" && Number.isFinite(score)) &&
+            (round.winner === undefined || round.winner === null || game.players.includes(round.winner)) &&
+            (round.starter === undefined || round.starter === null || game.players.includes(round.starter)) &&
+            (round.events === undefined || (Array.isArray(round.events) &&
+              round.events.length === game.players.length &&
+              round.events.every((events) => events && typeof events === "object" &&
+                EVENT_TYPES.every((eventType) => events[eventType.key] === undefined || typeof events[eventType.key] === "boolean"))))
+          )
         );
       }
 
       function normalizeGame(game) {
-        return { ...game, scoringMode: game.scoringMode || "high" };
+        const startingPlayer = game.startingPlayer && game.players.includes(game.startingPlayer)
+          ? game.startingPlayer
+          : game.players[0];
+        const startIndex = game.players.indexOf(startingPlayer);
+        return {
+          ...game,
+          name: game.name || "Rommé",
+          startingPlayer,
+          rounds: game.rounds.map((round, index) => ({
+            ...round,
+            starter: round.starter && game.players.includes(round.starter)
+              ? round.starter
+              : game.players[(startIndex + index) % game.players.length],
+            events: Array.isArray(round.events)
+              ? round.events.map((events) => Object.fromEntries(EVENT_TYPES.map((eventType) => [eventType.key, Boolean(events?.[eventType.key])])))
+              : game.players.map(() => Object.fromEntries(EVENT_TYPES.map((eventType) => [eventType.key, false])))
+          }))
+        };
       }
 
       function parseBackup(value) {
-        const source = Array.isArray(value)
-          ? value
-          : value && value.format === BACKUP_FORMAT && value.version === 1 && Array.isArray(value.games)
-            ? value.games
-            : null;
+        const isCurrentBackup = value && value.format === BACKUP_FORMAT && [1, 2].includes(value.version) && Array.isArray(value.games);
+        const source = Array.isArray(value) ? value : isCurrentBackup ? value.games : null;
         if (!source || source.length > 1000 || !source.every(isValidGame)) {
           throw new Error("Die Sicherungsdatei hat ein ungültiges oder nicht unterstütztes Format.");
         }
-        return source.map(normalizeGame);
+        const importedPlayers = isCurrentBackup && Array.isArray(value.players) ? value.players : [];
+        return { games: source.map(normalizeGame), players: uniquePlayers([...importedPlayers, ...source.flatMap((game) => game.players)]) };
       }
 
       function renderPlayerFields() {
+        const previousStartingPlayer = startingPlayerSelect.value;
         playerFields.innerHTML = playerDraft.map((name, index) => `
-          <div class="player-field">
-            <input class="text-input player-input" aria-label="Name von Person ${index + 1}" maxlength="40" placeholder="Person ${index + 1}" value="${escapeHtml(name)}" required>
-            <button class="remove-player" type="button" aria-label="Person ${index + 1} entfernen" data-remove-player="${index}" ${playerDraft.length <= 2 ? "disabled" : ""}>×</button>
-          </div>
+          <li class="roster-entry">
+            <span class="roster-entry-name"><span class="roster-position">${index + 1}.</span>${escapeHtml(name)}</span>
+            <button class="remove-player" type="button" aria-label="${escapeHtml(name)} aus der Partie entfernen" data-remove-player="${index}">×</button>
+          </li>
         `).join("");
+        rosterHelp.hidden = playerDraft.length > 0;
+        const available = playerNames.filter((name) => !playerDraft.some((player) => playerKey(player) === playerKey(name)));
+        availablePlayerSelect.innerHTML = available.length
+          ? available.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")
+          : '<option value="">Zuerst eine Person anlegen</option>';
+        availablePlayerSelect.disabled = available.length === 0;
+        document.getElementById("add-to-roster").disabled = available.length === 0;
+        startingPlayerSelect.innerHTML = playerDraft.length
+          ? playerDraft.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")
+          : '<option value="">Zuerst Mitspielende auswählen</option>';
+        startingPlayerSelect.disabled = playerDraft.length < 2;
+        if (playerDraft.includes(previousStartingPlayer)) {
+          startingPlayerSelect.value = previousStartingPlayer;
+        } else if (playerDraft.length) {
+          startingPlayerSelect.value = playerDraft[0];
+        }
       }
 
       function renderGameList() {
@@ -1138,74 +1346,31 @@
             <span class="game-icon" aria-hidden="true">♟</span>
             <span class="game-choice-copy">
               <strong>${escapeHtml(game.name)}</strong>
-              <span>${game.players.length} ${game.players.length === 1 ? "Person" : "Personen"} · ${game.rounds.length} ${game.rounds.length === 1 ? "Runde" : "Runden"} · ${game.scoringMode === "low" ? "wenigste Punkte" : "meiste Punkte"}</span>
+              <span>${game.players.length} ${game.players.length === 1 ? "Person" : "Personen"} · ${game.rounds.length} ${game.rounds.length === 1 ? "Runde" : "Runden"}</span>
             </span>
           </button>
         `).join("");
       }
 
-      function renderEditPanel(game) {
-        if (!editDraft) {
-          return "";
-        }
-        const playerInputs = editDraft.players.map((name, index) => `
-          <div class="player-field">
-            <input class="text-input edit-player-input" aria-label="Name von Person ${index + 1}" maxlength="40" placeholder="Person ${index + 1}" value="${escapeHtml(name)}" required>
-            <button class="remove-player" type="button" aria-label="Person ${index + 1} entfernen" data-edit-remove-player="${index}" ${editDraft.players.length <= 2 ? "disabled" : ""}>×</button>
-          </div>
-        `).join("");
-
-        return `
-          <div class="edit-panel" id="edit-panel">
-            <h3>Partie bearbeiten</h3>
-            <form class="edit-game-form" id="edit-game-form">
-              <div>
-                <label class="field-label" for="edit-game-name">Spielname</label>
-                <input class="text-input" id="edit-game-name" maxlength="60" value="${escapeHtml(editDraft.name ?? game.name)}" required>
-              </div>
-              <div>
-                <label class="field-label" for="edit-scoring-mode">Wertung</label>
-                <select class="text-input edit-rule" id="edit-scoring-mode">
-                  <option value="high" ${editDraft.scoringMode === "high" ? "selected" : ""}>Höchste Punktzahl gewinnt</option>
-                  <option value="low" ${editDraft.scoringMode === "low" ? "selected" : ""}>Niedrigste Punktzahl gewinnt</option>
-                </select>
-              </div>
-              <div>
-                <span class="field-label">Mitspielende</span>
-                <div class="player-fields" id="edit-player-fields">${playerInputs}</div>
-              </div>
-              <div class="edit-actions">
-                <button class="secondary-button" type="button" id="edit-add-player">＋ Person hinzufügen</button>
-                <button class="button" type="submit">Änderungen speichern</button>
-                <button class="secondary-button" type="button" id="cancel-edit">Abbrechen</button>
-              </div>
-              <p class="form-hint">Neue Mitspielende erhalten in bereits gespielten Runden 0 Punkte. Entfernte Personen und ihre bisherigen Punkte werden aus der Partie gelöscht.</p>
-            </form>
-          </div>
-        `;
-      }
-
       function renderScoreboard() {
         const game = getActiveGame();
         if (!game) {
-          editDraft = null;
           scoreboard.innerHTML = `
             <div class="board-empty">
               <div class="empty-icon" aria-hidden="true">＋</div>
-              <h2>Bereit für die nächste Runde?</h2>
-              <p>Erstelle links eine Partie. Danach kannst du hier die Punkte für jede Runde eintragen.</p>
+              <h2>Bereit für eine Rommé-Partie?</h2>
+              <p>Lege Mitspielende an, wähle die Reihenfolge und bestimme, wer die erste Runde beginnt.</p>
             </div>
           `;
           return;
         }
 
         const totals = game.players.map((_, index) => gameTotal(game, index));
-        const winningScore = game.scoringMode === "low" ? Math.min(...totals) : Math.max(...totals);
         const sortedPlayers = game.players.map((name, index) => ({ name, index, total: totals[index] }))
-          .sort((first, second) => game.scoringMode === "low" ? first.total - second.total : second.total - first.total);
+          .sort((first, second) => second.total - first.total);
         const rankingRows = sortedPlayers.map((player, rank) => `
           <tr>
-            <td><span class="rank ${player.total === winningScore && game.rounds.length > 0 ? "winner" : ""}">${rank + 1}</span></td>
+            <td><span class="rank">${rank + 1}</span></td>
             <td class="player-name">${escapeHtml(player.name)}</td>
             ${game.rounds.map((round) => `<td class="round-score">${round.scores[player.index]}</td>`).join("")}
             <td class="total-score">${player.total}</td>
@@ -1214,42 +1379,70 @@
         const mobileRanking = sortedPlayers.map((player, rank) => `
           <div class="mobile-player-score">
             <strong>${escapeHtml(player.name)}</strong>
-            <span><span>${rank === 0 && game.rounds.length > 0 ? "Führt" : `${rank + 1}. Platz`}</span><b>${player.total}</b></span>
+            <span><span>${rank === 0 && game.rounds.length > 0 ? "Punktestand" : `${rank + 1}. Platz`}</span><b>${player.total}</b></span>
           </div>
         `).join("");
 
         const scoreFields = game.players.map((name, index) => `
           <div class="round-field">
             <label for="score-${index}">${escapeHtml(name)}</label>
-            <input class="score-input" id="score-${index}" name="score-${index}" type="number" step="any" inputmode="decimal" value="0" required aria-label="Punkte für ${escapeHtml(name)} in der nächsten Runde">
+            <input class="score-input" id="score-${index}" name="score-${index}" type="number" step="any" inputmode="decimal" value="0" required aria-label="Punkte für ${escapeHtml(name)} in Runde ${game.rounds.length + 1}">
           </div>
         `).join("");
 
-        const roundRows = game.rounds.length > 0
-          ? game.rounds.map((round, index) => `
+        const eventInputs = game.players.map((name, playerIndex) => `
+          <tr>
+            <td class="player-name">${escapeHtml(name)}</td>
+            ${EVENT_TYPES.map((eventType) => `
+              <td>
+                <input class="event-check" type="checkbox" name="event-${playerIndex}-${eventType.key}" aria-label="${escapeHtml(eventType.label)} für ${escapeHtml(name)}">
+              </td>
+            `).join("")}
+          </tr>
+        `).join("");
+
+        const eventSummary = (round) => EVENT_TYPES.map((eventType) => {
+          const names = game.players.filter((_, playerIndex) => round.events?.[playerIndex]?.[eventType.key]);
+          return names.length ? `${eventType.label}: ${names.join(", ")}` : "";
+        }).filter(Boolean).join(" · ") || "Keine Ereignisse";
+
+        const roundRows = game.rounds.map((round, index) => `
             <tr>
               <td class="round-number">Runde ${index + 1}</td>
+              <td>${escapeHtml(round.starter || "—")}</td>
+              <td class="winner-name">${escapeHtml(round.winner || "—")}</td>
               ${round.scores.map((score) => `<td class="round-score">${score}</td>`).join("")}
+              <td class="round-details">${escapeHtml(eventSummary(round))}</td>
               <td class="round-actions"><button class="delete-round" type="button" data-remove-round="${escapeHtml(round.id)}" aria-label="Runde ${index + 1} löschen" title="Runde löschen">×</button></td>
             </tr>
           `).join("")
-          : "";
+        const followingStarter = game.players[(game.players.indexOf(game.startingPlayer) + game.rounds.length) % game.players.length];
+        const starterMessage = game.rounds.length === 0
+          ? `Runde 1 beginnt ${escapeHtml(followingStarter)}.`
+          : `Start rotiert automatisch: Runde ${game.rounds.length + 1} beginnt ${escapeHtml(followingStarter)}.`;
+        const statisticsRows = game.players.map((name, index) => `
+          <tr>
+            <td class="player-name">${escapeHtml(name)}</td>
+            <td class="total-score">${gameTotal(game, index)}</td>
+            ${EVENT_TYPES.map((eventType) => `<td>${eventTotal(game, index, eventType.key)}</td>`).join("")}
+            <td>${game.rounds.filter((round) => round.winner === name).length}</td>
+          </tr>
+        `).join("");
 
         scoreboard.innerHTML = `
           <div class="board-header">
             <div>
-              <span class="board-kicker">Aktuelle Partie</span>
+              <span class="board-kicker">Rommé · Aktuelle Partie</span>
               <h2 class="board-title">${escapeHtml(game.name)}</h2>
-              <p class="board-meta">${game.players.length} Mitspielende · ${game.rounds.length} ${game.rounds.length === 1 ? "Runde gespielt" : "Runden gespielt"} · ${game.scoringMode === "low" ? "Niedrigste Punktzahl gewinnt" : "Höchste Punktzahl gewinnt"}</p>
+              <p class="board-meta">${game.players.length} Mitspielende · ${game.rounds.length} ${game.rounds.length === 1 ? "Runde gespielt" : "Runden gespielt"} · Beginn bei ${escapeHtml(game.startingPlayer)}</p>
             </div>
             <div class="board-actions">
-              <button class="text-button edit-button" type="button" id="edit-game">${editDraft ? "Bearbeitung schließen" : "Partie bearbeiten"}</button>
               <button class="text-button" type="button" id="delete-game">Partie löschen</button>
             </div>
           </div>
-          ${renderEditPanel(game)}
           <div class="score-section">
-            <h3>Gesamtstand</h3>
+            <h3>Kumulierte Punkte</h3>
+            <p class="event-hint">Punkte je Runde werden addiert; wer eine Runde gewinnt, wird unabhängig davon ausgewählt.</p>
             <div class="score-summary-mobile" aria-label="Rangliste">${mobileRanking}</div>
             <div class="table-scroll score-summary-desktop" role="region" aria-label="Gesamtstand, horizontal scrollbar" tabindex="0">
               <table class="score-table">
@@ -1262,27 +1455,63 @@
             <p class="table-hint score-summary-desktop">Bei vielen Runden kannst du die Tabelle seitlich scrollen.</p>
 
             <div class="rounds-heading">
-              <h3>Punkte für die nächste Runde</h3>
-              <span>${game.scoringMode === "low" ? "Wenigere Punkte sind besser" : "Mehr Punkte sind besser"}</span>
+              <h3>Runde ${game.rounds.length + 1} eintragen</h3>
+              <span>${starterMessage}</span>
             </div>
             <form class="round-form" id="round-form">
-              ${scoreFields}
+              <div class="round-context">
+                <div>
+                  <label class="field-label" for="round-starter">Wer beginnt?</label>
+                  <input class="text-input" id="round-starter" value="${escapeHtml(followingStarter)}" readonly aria-label="Startspieler in dieser Runde">
+                </div>
+                <div>
+                  <label class="field-label" for="round-winner">Wer hat die Runde gewonnen?</label>
+                  <select class="text-input" id="round-winner" name="roundWinner" required>
+                    <option value="">Rundensieger auswählen</option>
+                    ${game.players.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")}
+                  </select>
+                </div>
+              </div>
+              <div class="round-fields">
+                <span class="field-label">Punkte dieser Runde</span>
+                <p class="event-hint">Trage die Punkte für jede Person ein. Sie werden zur bisherigen Summe addiert.</p>
+                <div class="round-form-score-grid">${scoreFields}</div>
+              </div>
+              <h3 class="event-title">Ereignisse in dieser Runde</h3>
+              <p class="event-hint">Markiere je Person, was in der Runde passiert ist. Jedes Ereignis zählt höchstens einmal pro Person und Runde.</p>
+              <div class="event-table-wrap" role="region" aria-label="Rommé-Ereignisse pro Person" tabindex="0">
+                <table class="event-table">
+                  <thead><tr><th scope="col">Mitspielende</th>${EVENT_TYPES.map((eventType) => `<th scope="col">${escapeHtml(eventType.label)}</th>`).join("")}</tr></thead>
+                  <tbody>${eventInputs}</tbody>
+                </table>
+              </div>
               <button class="button" type="submit">＋ Runde eintragen</button>
             </form>
 
             <div class="rounds-heading">
-              <h3>Rundenverlauf</h3>
-              <span>${game.rounds.length} ${game.rounds.length === 1 ? "Eintrag" : "Einträge"}</span>
+              <h3>Statistik über alle Runden</h3>
+              <span>kumuliert je Person</span>
             </div>
-            ${game.rounds.length > 0 ? `
+            <div class="table-scroll" role="region" aria-label="Kumulierte Rommé-Statistik, horizontal scrollbar" tabindex="0">
+              <table class="score-table stats-table">
+                <thead><tr><th scope="col">Mitspielende</th><th scope="col">Punkte</th>${EVENT_TYPES.map((eventType) => `<th scope="col">${escapeHtml(eventType.label)}</th>`).join("")}<th scope="col">Rundensiege</th></tr></thead>
+                <tbody>${statisticsRows}</tbody>
+              </table>
+            </div>
+
+            <div class="rounds-heading">
+              <h3>Rundenverlauf</h3>
+              <span>${game.rounds.length} ${game.rounds.length === 1 ? "Runde" : "Runden"}</span>
+            </div>
+            ${game.rounds.length ? `
               <div class="table-scroll" role="region" aria-label="Rundenverlauf, horizontal scrollbar" tabindex="0">
                 <table class="score-table round-table">
-                  <thead><tr><th scope="col">Runde</th>${game.players.map((name) => `<th scope="col">${escapeHtml(name)}</th>`).join("")}<th scope="col" aria-label="Aktionen"></th></tr></thead>
+                  <thead><tr><th scope="col">Runde</th><th scope="col">Start</th><th scope="col">Rundensieg</th>${game.players.map((name) => `<th scope="col">${escapeHtml(name)}</th>`).join("")}<th scope="col">Ereignisse</th><th scope="col" aria-label="Aktionen"></th></tr></thead>
                   <tbody>${roundRows}</tbody>
                 </table>
               </div>
-              <p class="table-hint">Bei vielen Mitspielenden kannst du die Tabelle seitlich scrollen.</p>
-            ` : '<div class="empty-rounds">Noch keine Punkte notiert. Trage oben die Punkte aus der ersten Runde ein.</div>'}
+              <p class="table-hint">Bei vielen Mitspielenden oder Runden kannst du die Tabelle seitlich scrollen.</p>
+            ` : '<div class="empty-rounds">Noch keine Runden eingetragen. Erfasse oben Punkte, Rundensieger und Ereignisse.</div>'}
           </div>
         `;
       }
@@ -1291,6 +1520,7 @@
         if (activeGameId && !getActiveGame()) {
           activeGameId = games.length > 0 ? games[0].id : null;
         }
+        renderPlayerFields();
         renderGameList();
         renderScoreboard();
       }
@@ -1298,17 +1528,25 @@
       function loadGames() {
         try {
           const saved = localStorage.getItem(STORAGE_KEY);
-          if (!saved) {
-            return;
+          const savedPlayers = localStorage.getItem(PLAYERS_KEY);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (!Array.isArray(parsed)) {
+              throw new Error("Ungültiges Datenformat");
+            }
+            games = parsed.filter(isValidGame).map(normalizeGame);
+            if (parsed.length !== games.length) {
+              showNotice("Einige gespeicherte Partien konnten nicht geladen werden. Die übrigen Daten sind verfügbar.", true);
+            }
           }
-          const parsed = JSON.parse(saved);
-          if (!Array.isArray(parsed)) {
-            throw new Error("Ungültiges Datenformat");
+          if (savedPlayers) {
+            const parsedPlayers = JSON.parse(savedPlayers);
+            if (!Array.isArray(parsedPlayers) || !parsedPlayers.every((name) => typeof name === "string")) {
+              throw new Error("Ungültige Spielerliste");
+            }
+            playerNames = uniquePlayers(parsedPlayers);
           }
-          games = parsed.filter(isValidGame).map(normalizeGame);
-          if (parsed.length !== games.length) {
-            showNotice("Einige gespeicherte Partien konnten nicht geladen werden. Die übrigen Daten sind verfügbar.", true);
-          }
+          playerNames = uniquePlayers([...playerNames, ...games.flatMap((game) => game.players)]);
           activeGameId = games.length > 0 ? games[0].id : null;
         } catch (error) {
           showNotice("Gespeicherte Spielstände konnten nicht gelesen werden. Der Browser-Speicher ist möglicherweise nicht verfügbar.", true);
@@ -1316,24 +1554,48 @@
       }
 
       document.getElementById("add-player").addEventListener("click", () => {
-        playerDraft.push("");
+        const name = newPlayerNameInput.value.trim();
+        if (!name) {
+          showNotice("Bitte gib einen Namen ein.", true);
+          newPlayerNameInput.focus();
+          return;
+        }
+        if (name.length > 40) {
+          showNotice("Der Name darf höchstens 40 Zeichen lang sein.", true);
+          return;
+        }
+        if (playerNames.some((player) => playerKey(player) === playerKey(name))) {
+          showNotice(`„${name}“ ist bereits in der Spielerliste. Wähle die vorhandene Person aus.`, true);
+          return;
+        }
+        playerNames.push(name);
+        playerDraft.push(name);
+        const saved = saveState();
         renderPlayerFields();
-        playerFields.querySelector(".player-input:last-of-type")?.focus();
+        newPlayerNameInput.value = "";
+        newPlayerNameInput.focus();
+        if (saved) {
+          showNotice(`${name} zur gemeinsamen Spielerliste hinzugefügt und für diese Partie ausgewählt.`);
+        }
       });
 
-      playerFields.addEventListener("input", (event) => {
-        if (event.target.matches(".player-input")) {
-          const input = event.target;
-          const index = Array.from(playerFields.querySelectorAll(".player-input")).indexOf(input);
-          if (index >= 0) {
-            playerDraft[index] = input.value;
-          }
+      document.getElementById("add-to-roster").addEventListener("click", () => {
+        const name = availablePlayerSelect.value;
+        if (!name || playerDraft.some((player) => playerKey(player) === playerKey(name))) {
+          return;
         }
+        if (playerDraft.length >= 20) {
+          showNotice("Eine Partie kann höchstens 20 Mitspielende haben.", true);
+          return;
+        }
+        playerDraft.push(name);
+        renderPlayerFields();
+        showNotice(`${name} zur Partie hinzugefügt. Reihenfolge ${playerDraft.length}.`);
       });
 
       playerFields.addEventListener("click", (event) => {
         const button = event.target.closest("[data-remove-player]");
-        if (!button || playerDraft.length <= 2) {
+        if (!button) {
           return;
         }
         playerDraft.splice(Number(button.dataset.removePlayer), 1);
@@ -1342,23 +1604,26 @@
 
       document.getElementById("new-game-form").addEventListener("submit", (event) => {
         event.preventDefault();
-        const name = gameNameInput.value.trim();
-        const players = Array.from(playerFields.querySelectorAll(".player-input"), (input) => input.value.trim());
-        if (!name || players.length < 2 || players.some((player) => !player)) {
-          showNotice("Bitte gib einen Spielnamen und mindestens zwei Namen für die Mitspielenden ein.", true);
+        const players = [...playerDraft];
+        const startingPlayer = startingPlayerSelect.value;
+        if (players.length < 2) {
+          showNotice("Wähle mindestens zwei Mitspielende für die Partie aus.", true);
+          return;
+        }
+        if (!startingPlayer || !players.includes(startingPlayer)) {
+          showNotice("Bitte wähle aus, wer die erste Runde beginnt.", true);
           return;
         }
 
-        const game = { id: createId(), name, players, rounds: [], scoringMode: scoringModeInput.value };
+        const game = { id: createId(), name: "Rommé", players, startingPlayer, rounds: [] };
         games.unshift(game);
         activeGameId = game.id;
-        const saved = saveGames();
+        const saved = saveState();
         render();
-        gameNameInput.value = "";
-        playerDraft = ["Spieler 1", "Spieler 2"];
+        playerDraft = [];
         renderPlayerFields();
         if (saved) {
-          showNotice(`Partie „${name}“ erstellt.`);
+          showNotice(`Rommé-Partie gestartet. ${startingPlayer} beginnt; die Startposition rotiert in der eingegebenen Reihenfolge.`);
         }
       });
 
@@ -1389,47 +1654,28 @@
           showNotice("Bitte trage für alle Mitspielenden gültige Punkte ein.", true);
           return;
         }
-        game.rounds.push({ id: createId(), scores });
-        const saved = saveGames();
+        const winner = document.getElementById("round-winner").value;
+        if (!game.players.includes(winner)) {
+          showNotice("Bitte wähle den Rundensieger aus.", true);
+          return;
+        }
+        const events = game.players.map((_, playerIndex) =>
+          Object.fromEntries(EVENT_TYPES.map((eventType) => [
+            eventType.key,
+            Boolean(event.target.elements.namedItem(`event-${playerIndex}-${eventType.key}`).checked)
+          ]))
+        );
+        const starter = game.players[(game.players.indexOf(game.startingPlayer) + game.rounds.length) % game.players.length];
+        game.rounds.push({ id: createId(), scores, winner, starter, events });
+        const roundNumber = game.rounds.length;
+        const saved = saveState();
         render();
         if (saved) {
-          showNotice(`Runde ${game.rounds.length} eingetragen. Gesamtstand aktualisiert.`);
+          showNotice(`Runde ${roundNumber} gespeichert. Punkte, Rundensieg und Rommé-Statistik aktualisiert.`);
         }
       });
 
       scoreboard.addEventListener("click", (event) => {
-        if (event.target.id === "edit-game") {
-          const game = getActiveGame();
-          if (!game) {
-            return;
-          }
-          editDraft = editDraft
-            ? null
-            : { players: [...game.players], playerOrigins: game.players.map((_, index) => index), scoringMode: game.scoringMode };
-          render();
-          if (editDraft) {
-            document.getElementById("edit-game-name").focus();
-          }
-          return;
-        }
-
-        if (event.target.id === "edit-add-player") {
-          editDraft.players.push("");
-          editDraft.playerOrigins.push(null);
-          render();
-          const inputs = scoreboard.querySelectorAll(".edit-player-input");
-          inputs[inputs.length - 1]?.focus();
-          return;
-        }
-
-        if (event.target.id === "cancel-edit") {
-          editDraft = null;
-          render();
-          showNotice("Bearbeitung abgebrochen.");
-          scoreboard.querySelector("#edit-game")?.focus();
-          return;
-        }
-
         if (event.target.id === "delete-game") {
           const game = getActiveGame();
           if (!game || !window.confirm(`Möchtest du die Partie „${game.name}“ mit allen Runden wirklich löschen?`)) {
@@ -1437,23 +1683,11 @@
           }
           games = games.filter((item) => item.id !== game.id);
           activeGameId = games.length > 0 ? games[0].id : null;
-          editDraft = null;
-          const saved = saveGames();
+          const saved = saveState();
           render();
           if (saved) {
             showNotice("Partie mit allen Runden gelöscht.");
           }
-          return;
-        }
-
-        const removePlayer = event.target.closest("[data-edit-remove-player]");
-        if (removePlayer && editDraft && editDraft.players.length > 2) {
-          const index = Number(removePlayer.dataset.editRemovePlayer);
-          editDraft.players.splice(index, 1);
-          editDraft.playerOrigins.splice(index, 1);
-          render();
-          const inputs = scoreboard.querySelectorAll(".edit-player-input");
-          inputs[Math.min(index, inputs.length - 1)]?.focus();
           return;
         }
 
@@ -1464,69 +1698,20 @@
             return;
           }
           game.rounds = game.rounds.filter((round) => round.id !== deleteButton.dataset.removeRound);
-          const saved = saveGames();
+          const saved = saveState();
           render();
           if (saved) {
-            showNotice("Runde gelöscht. Der Gesamtstand wurde aktualisiert.");
+            showNotice("Runde gelöscht. Punkte, Rundensiege und Ereignisstatistik wurden neu berechnet.");
           }
-        }
-      });
-
-      scoreboard.addEventListener("input", (event) => {
-        if (!editDraft) {
-          return;
-        }
-        if (event.target.id === "edit-game-name") {
-          editDraft.name = event.target.value;
-        } else if (event.target.matches(".edit-player-input")) {
-          const inputs = Array.from(scoreboard.querySelectorAll(".edit-player-input"));
-          const index = inputs.indexOf(event.target);
-          if (index >= 0) {
-            editDraft.players[index] = event.target.value;
-          }
-        }
-      });
-
-      scoreboard.addEventListener("change", (event) => {
-        if (editDraft && event.target.id === "edit-scoring-mode") {
-          editDraft.scoringMode = event.target.value;
-        }
-      });
-
-      scoreboard.addEventListener("submit", (event) => {
-        if (event.target.id !== "edit-game-form") {
-          return;
-        }
-        event.preventDefault();
-        const game = getActiveGame();
-        const name = document.getElementById("edit-game-name").value.trim();
-        const players = Array.from(scoreboard.querySelectorAll(".edit-player-input"), (input) => input.value.trim());
-        const scoringMode = document.getElementById("edit-scoring-mode").value;
-        if (!game || !name || players.length < 2 || players.length > 20 || players.some((player) => !player)) {
-          showNotice("Bitte gib einen Spielnamen und mindestens zwei gültige Namen ein (maximal 20 Mitspielende).", true);
-          return;
-        }
-
-        game.rounds = game.rounds.map((round) => ({
-          ...round,
-          scores: editDraft.playerOrigins.map((origin) => origin === null ? 0 : round.scores[origin])
-        }));
-        game.name = name;
-        game.players = players;
-        game.scoringMode = scoringMode;
-        editDraft = null;
-        const saved = saveGames();
-        render();
-        if (saved) {
-          showNotice("Partie, Mitspielende und Wertung aktualisiert.");
         }
       });
 
       document.getElementById("export-data").addEventListener("click", () => {
         const backup = {
           format: BACKUP_FORMAT,
-          version: 1,
+          version: 2,
           exportedAt: new Date().toISOString(),
+          players: playerNames,
           games
         };
         const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
@@ -1552,17 +1737,19 @@
         }
         try {
           const imported = parseBackup(JSON.parse(await file.text()));
-          if (!window.confirm(`${imported.length} ${imported.length === 1 ? "Partie wird" : "Partien werden"} importiert und ersetzen alle aktuell gespeicherten Partien. Fortfahren?`)) {
+          if (!window.confirm(`${imported.games.length} ${imported.games.length === 1 ? "Partie wird" : "Partien werden"} importiert und ersetzen alle aktuell gespeicherten Partien sowie die Spielerliste. Fortfahren?`)) {
             showNotice("Import abgebrochen.");
             return;
           }
           const previousGames = games;
-          games = imported;
+          const previousPlayers = playerNames;
+          games = imported.games;
+          playerNames = imported.players;
           activeGameId = games.length > 0 ? games[0].id : null;
-          editDraft = null;
-          const saved = saveGames();
+          const saved = saveState();
           if (!saved) {
             games = previousGames;
+            playerNames = previousPlayers;
             activeGameId = games.length > 0 ? games[0].id : null;
             render();
             return;
@@ -1574,7 +1761,6 @@
         }
       });
 
-      renderPlayerFields();
       loadGames();
       render();
     })();
