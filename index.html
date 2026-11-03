@@ -3,19 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#10110f">
-  <meta name="description" content="Rommé-Punkte, Rundensieger und Kartenereignisse pro Person und Runde erfassen.">
-  <title>Spielstand — Rommé im Blick</title>
+  <meta name="theme-color" content="#151313">
+  <meta name="description" content="Spielstände und Statistiken für gemeinsame Spieleabende – derzeit mit Rommé-Tracker.">
+  <title>Spielstand — Spieleabend im Blick</title>
   <style>
     :root {
       color-scheme: dark;
-      --bg: #10110f;
-      --surface: #181a17;
-      --surface-raised: #20231f;
-      --text: #f3f2eb;
-      --muted: #a7aaa0;
-      --accent: #c9f36a;
-      --line: rgba(243, 242, 235, .12);
+      --bg: #151313;
+      --surface: #211b19;
+      --surface-raised: #2b2320;
+      --text: #f5eee7;
+      --muted: #b5aaa1;
+      --accent: #e8ab77;
+      --line: rgba(245, 238, 231, .12);
       --danger: #ff9386;
       --page-width: 1160px;
     }
@@ -31,7 +31,7 @@
     body {
       min-width: 320px;
       margin: 0;
-      background: var(--bg);
+      background: radial-gradient(ellipse at 88% 0%, rgba(232, 171, 119, .07), transparent 33%), var(--bg);
       color: var(--text);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       -webkit-font-smoothing: antialiased;
@@ -66,7 +66,28 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 20px;
       border-bottom: 1px solid var(--line);
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .main-nav a {
+      padding: 9px 11px;
+      border-radius: 9px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .main-nav a:hover {
+      background: rgba(255, 255, 255, .05);
+      color: var(--text);
     }
 
     .brand {
@@ -85,7 +106,7 @@
       place-items: center;
       border-radius: 9px;
       background: var(--accent);
-      color: #14170e;
+      color: #2b1d16;
       font-size: 17px;
       letter-spacing: 0;
     }
@@ -192,12 +213,124 @@
       line-height: 1.7;
     }
 
+    .game-catalog {
+      padding-bottom: 42px;
+    }
+
+    .catalog-heading {
+      margin-bottom: 18px;
+    }
+
+    .catalog-heading h2 {
+      margin: 10px 0 7px;
+      font-size: 22px;
+      letter-spacing: -.04em;
+    }
+
+    .catalog-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .game-catalog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+      gap: 14px;
+    }
+
+    .game-tile {
+      min-height: 205px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background:
+        radial-gradient(ellipse at 100% 0%, rgba(232, 171, 119, .09), transparent 50%),
+        var(--surface);
+    }
+
+    a.game-tile {
+      transition: border-color .16s ease, transform .16s ease;
+    }
+
+    a.game-tile:hover {
+      transform: translateY(-2px);
+      border-color: rgba(232, 171, 119, .42);
+    }
+
+    .game-tile-muted {
+      background: var(--surface);
+      color: var(--muted);
+    }
+
+    .tile-topline {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .tile-symbol {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      background: rgba(232, 171, 119, .12);
+      color: var(--accent);
+      font-size: 18px;
+      font-weight: 750;
+    }
+
+    .tile-status {
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 750;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .game-tile h3 {
+      margin: 18px 0 6px;
+      font-size: 17px;
+      letter-spacing: -.03em;
+    }
+
+    .game-tile p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .tile-cta {
+      margin-top: auto;
+      padding-top: 18px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .game-tile-muted .tile-status {
+      color: var(--muted);
+    }
+
+    .game-tile-muted .tile-symbol {
+      background: var(--surface-raised);
+      color: var(--muted);
+    }
+
     .notice {
       margin-bottom: 22px;
       padding: 13px 16px;
-      border: 1px solid rgba(201, 243, 106, .25);
+      border: 1px solid rgba(232, 171, 119, .25);
       border-radius: 12px;
-      background: rgba(201, 243, 106, .07);
+      background: rgba(232, 171, 119, .07);
       color: var(--text);
       font-size: 13px;
       line-height: 1.5;
@@ -218,6 +351,54 @@
       align-items: start;
       gap: 20px;
       padding-bottom: 80px;
+    }
+
+    .overall-statistics {
+      grid-column: 1 / -1;
+      padding: 20px;
+      scroll-margin-top: 20px;
+    }
+
+    .overall-statistics .panel-heading {
+      padding: 0;
+    }
+
+    .overall-statistics .panel-heading h2 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .statistics-hint {
+      margin: 7px 0 16px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .statistics-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 17px;
+    }
+
+    .statistics-metric {
+      display: grid;
+      gap: 5px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: rgba(255, 255, 255, .02);
+    }
+
+    .statistics-metric span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .statistics-metric strong {
+      font-size: 20px;
+      font-variant-numeric: tabular-nums;
     }
 
     .sidebar {
@@ -276,8 +457,8 @@
     }
 
     .game-choice[aria-current="true"] {
-      border-color: rgba(201, 243, 106, .25);
-      background: rgba(201, 243, 106, .08);
+      border-color: rgba(232, 171, 119, .25);
+      background: rgba(232, 171, 119, .08);
     }
 
     .game-icon {
@@ -293,7 +474,7 @@
     }
 
     .game-choice[aria-current="true"] .game-icon {
-      background: rgba(201, 243, 106, .15);
+      background: rgba(232, 171, 119, .15);
     }
 
     .game-choice-copy {
@@ -404,8 +585,8 @@
 
     .text-input:focus,
     .score-input:focus {
-      border-color: rgba(201, 243, 106, .65);
-      box-shadow: 0 0 0 3px rgba(201, 243, 106, .1);
+      border-color: rgba(232, 171, 119, .65);
+      box-shadow: 0 0 0 3px rgba(232, 171, 119, .1);
     }
 
     .player-fields {
@@ -510,7 +691,7 @@
       border: 1px solid transparent;
       border-radius: 10px;
       background: var(--accent);
-      color: #14170e;
+      color: #2b1d16;
       font-size: 13px;
       font-weight: 750;
       cursor: pointer;
@@ -519,12 +700,14 @@
 
     .button:hover {
       transform: translateY(-1px);
-      background: #d7ff80;
+      background: #f1bd92;
     }
 
     .button:focus-visible,
     .secondary-button:focus-visible,
     .game-choice:focus-visible,
+    .main-nav a:focus-visible,
+    .game-tile:focus-visible,
     .remove-player:focus-visible,
     .text-button:focus-visible,
     .delete-round:focus-visible,
@@ -579,9 +762,9 @@
       display: grid;
       place-items: center;
       margin-bottom: 19px;
-      border: 1px solid rgba(201, 243, 106, .18);
+      border: 1px solid rgba(232, 171, 119, .18);
       border-radius: 22px;
-      background: rgba(201, 243, 106, .08);
+      background: rgba(232, 171, 119, .08);
       color: var(--accent);
       font-size: 30px;
     }
@@ -717,6 +900,239 @@
       letter-spacing: -.01em;
     }
 
+    .score-card-grid,
+    .statistics-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 205px), 1fr));
+      gap: 12px;
+    }
+
+    .score-card,
+    .statistics-player-card {
+      position: relative;
+      display: grid;
+      align-content: start;
+      gap: 13px;
+      min-width: 0;
+      padding: 17px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, .035), transparent 68%), var(--surface-raised);
+    }
+
+    .score-card::before {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3px;
+      background: rgba(232, 171, 119, .55);
+      content: "";
+    }
+
+    .score-card-label,
+    .statistics-player-label {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .score-card-name,
+    .statistics-player-name {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .score-card-points {
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+      margin-top: 2px;
+    }
+
+    .score-card-points strong,
+    .statistics-player-points strong {
+      color: var(--accent);
+      font-size: 30px;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.05em;
+    }
+
+    .score-card-points span,
+    .statistics-player-points span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .score-card-detail,
+    .statistics-player-detail {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .score-detail-chip,
+    .round-score-chip,
+    .round-event-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 0;
+      padding: 5px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .025);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.4;
+    }
+
+    .score-detail-chip strong,
+    .round-score-chip strong {
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .round-score-chip.is-winner {
+      border-color: rgba(232, 171, 119, .28);
+      background: rgba(232, 171, 119, .09);
+      color: var(--text);
+    }
+
+    .statistics-player-card {
+      gap: 9px;
+      background: var(--surface);
+    }
+
+    .statistics-player-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .statistics-player-points {
+      display: grid;
+      justify-items: end;
+      gap: 1px;
+    }
+
+    .statistics-player-points strong {
+      font-size: 23px;
+    }
+
+    .statistics-player-points span {
+      font-size: 9px;
+    }
+
+    .statistics-player-detail .score-detail-chip {
+      font-size: 9px;
+    }
+
+    .round-history {
+      display: grid;
+      gap: 10px;
+    }
+
+    .round-card {
+      min-width: 0;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+
+    .round-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .round-card-title {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .round-card-title strong {
+      font-size: 12px;
+    }
+
+    .round-card-title span {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .round-card-scores,
+    .round-card-events {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .round-card-events {
+      margin-top: 10px;
+    }
+
+    .round-event-chip {
+      border-color: rgba(232, 171, 119, .18);
+      background: rgba(232, 171, 119, .055);
+      color: var(--text);
+    }
+
+    .round-event-chip[hidden] {
+      display: none;
+    }
+
+    .event-player-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+      gap: 9px;
+    }
+
+    .event-player-card {
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .02);
+    }
+
+    .event-player-card > strong {
+      display: block;
+      margin-bottom: 10px;
+      overflow-wrap: anywhere;
+      font-size: 12px;
+    }
+
+    .event-choice-list {
+      display: grid;
+      gap: 7px;
+    }
+
+    .event-choice {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.4;
+      cursor: pointer;
+    }
+
+    .event-choice input {
+      flex: 0 0 auto;
+      width: 15px;
+      height: 15px;
+      margin: 0;
+      accent-color: var(--accent);
+    }
+
     .table-scroll {
       overflow-x: auto;
       border: 1px solid var(--line);
@@ -740,7 +1156,7 @@
 
     .score-table th:first-child {
       z-index: 2;
-      background: #1c1e1a;
+      background: #29211e;
     }
 
     .score-table th,
@@ -795,7 +1211,7 @@
     }
 
     .rank.winner {
-      background: rgba(201, 243, 106, .15);
+      background: rgba(232, 171, 119, .15);
       color: var(--accent);
     }
 
@@ -902,7 +1318,7 @@
 
     .event-table th:first-child {
       z-index: 2;
-      background: #1c1e1a;
+      background: #29211e;
     }
 
     .event-check {
@@ -1057,7 +1473,27 @@
       }
 
       .topbar {
-        height: 68px;
+        height: auto;
+        min-height: 68px;
+        flex-wrap: wrap;
+        row-gap: 8px;
+        padding-block: 10px;
+      }
+
+      .main-nav {
+        order: 3;
+        width: 100%;
+        justify-content: space-between;
+        border-top: 1px solid var(--line);
+        padding-top: 7px;
+      }
+
+      .main-nav a {
+        padding: 8px 9px;
+      }
+
+      .auth-actions {
+        gap: 8px;
       }
 
       .local-label {
@@ -1065,7 +1501,23 @@
       }
 
       .intro {
-        padding-block: 43px 28px;
+        padding-block: 36px 28px;
+      }
+
+      .game-catalog {
+        padding-bottom: 32px;
+      }
+
+      .game-tile {
+        min-height: 185px;
+      }
+
+      .overall-statistics {
+        padding: 16px;
+      }
+
+      .statistics-summary {
+        grid-template-columns: 1fr;
       }
 
       .workspace {
@@ -1174,10 +1626,15 @@
 </head>
 <body>
   <header class="wrap topbar">
-    <a class="brand" href="#" aria-label="Spielstand Startseite">
+    <a class="brand" href="#spiele" aria-label="Spielstand Startseite">
       <span class="brand-mark" aria-hidden="true">+</span>
       spielstand
     </a>
+    <nav class="main-nav" aria-label="Hauptnavigation">
+      <a href="#spiele">Spiele</a>
+      <a href="#auth-panel" data-auth-target="partien">Partien</a>
+      <a href="#auth-panel" data-auth-target="statistiken">Statistiken</a>
+    </nav>
     <div class="auth-actions">
       <span class="local-label" id="connection-status">Nicht verbunden</span>
       <button class="secondary-button" id="sign-out" type="button" hidden>Abmelden</button>
@@ -1186,9 +1643,37 @@
 
   <main class="wrap">
     <section class="intro" aria-labelledby="page-title">
-      <span class="eyebrow">Rommé im Blick</span>
-      <h1 id="page-title">Jede Runde zählt.<br><span>Jeder Punkt bleibt.</span></h1>
-      <p>Verfolge Startreihenfolge, Rundensieger, Punkte und besondere Kartenereignisse – mit einer gemeinsamen Spielerliste für alle Partien.</p>
+      <span class="eyebrow">Spieleabend leicht gemacht</span>
+      <h1 id="page-title">Spiele gemeinsam.<br><span>Spielstände im Blick.</span></h1>
+      <p>Wähle ein Spiel, halte Ergebnisse fest und behalte den Überblick über deine Partien und Statistiken.</p>
+    </section>
+
+    <section class="game-catalog" id="spiele" aria-labelledby="catalog-title">
+      <div class="catalog-heading">
+        <span class="eyebrow">Spielebibliothek</span>
+        <h2 id="catalog-title">Womit spielt ihr heute?</h2>
+        <p>Rommé ist startklar. Weitere Spiele kommen nach und nach dazu.</p>
+      </div>
+      <div class="game-catalog-grid">
+        <a class="game-tile" id="romme-tile" href="#auth-panel">
+          <div class="tile-topline">
+            <span class="tile-symbol" aria-hidden="true">R</span>
+            <span class="tile-status">Jetzt verfügbar</span>
+          </div>
+          <h3>Rommé</h3>
+          <p>Runden, kumulierte Punkte, Rundensiege und besondere Kartenereignisse festhalten.</p>
+          <span class="tile-cta" id="romme-tile-cta">Mit Namen starten <span aria-hidden="true">→</span></span>
+        </a>
+        <div class="game-tile game-tile-muted" aria-label="Dart, in Vorbereitung">
+          <div class="tile-topline">
+            <span class="tile-symbol" aria-hidden="true">↗</span>
+            <span class="tile-status">In Vorbereitung</span>
+          </div>
+          <h3>Dart</h3>
+          <p>Einfach neue Spielarten ergänzen – Dart ist als Nächstes geplant.</p>
+          <span class="tile-cta">Demnächst</span>
+        </div>
+      </div>
     </section>
 
     <div class="notice" id="notice" role="status" aria-live="polite" aria-atomic="true" hidden></div>
@@ -1208,7 +1693,21 @@
     </section>
 
     <div class="workspace" id="workspace" hidden>
-      <aside class="sidebar" aria-label="Partien verwalten">
+      <section class="panel overall-statistics" id="statistiken" aria-labelledby="overall-statistics-title">
+        <div class="panel-heading">
+          <h2 id="overall-statistics-title">Rommé-Statistiken</h2>
+          <span class="count">Alle zugänglichen Partien</span>
+        </div>
+        <p class="statistics-hint">Zusammenfassung über alle Rommé-Partien, die in deiner Partienliste verfügbar sind.</p>
+        <div class="statistics-summary" aria-label="Rommé-Übersicht">
+          <div class="statistics-metric"><span>Partien</span><strong id="statistics-game-count">0</strong></div>
+          <div class="statistics-metric"><span>Gespielte Runden</span><strong id="statistics-round-count">0</strong></div>
+          <div class="statistics-metric"><span>Mitspielende</span><strong id="statistics-player-count">0</strong></div>
+        </div>
+        <div class="table-scroll" id="statistics-player-table" role="region" aria-label="Spielerstatistik über alle Rommé-Partien" tabindex="0"></div>
+      </section>
+
+      <aside class="sidebar" id="partien" aria-label="Partien verwalten">
         <section class="panel" aria-labelledby="games-heading">
           <div class="panel-heading">
             <h2 id="games-heading">Deine Partien</h2>
@@ -1461,6 +1960,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         workspace.hidden = !isAuthenticated;
         signOutButton.hidden = !isAuthenticated;
         document.getElementById("local-backup-actions").hidden = isAuthenticated;
+        document.querySelectorAll("[data-auth-target]").forEach((link) => {
+          link.href = isAuthenticated ? `#${link.dataset.authTarget}` : "#auth-panel";
+        });
+        document.getElementById("romme-tile").href = isAuthenticated ? "#new-game-form" : "#auth-panel";
+        document.getElementById("romme-tile-cta").textContent = isAuthenticated
+          ? "Neue Partie starten →"
+          : "Mit Namen starten →";
         connectionStatus.textContent = isAuthenticated
           ? currentPlayer?.name || currentUser?.user_metadata?.display_name || "Angemeldet"
           : "Nicht verbunden";
@@ -1945,19 +2451,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const totals = game.players.map((_, index) => gameTotal(game, index));
         const sortedPlayers = game.players.map((name, index) => ({ name, index, total: totals[index] }))
           .sort((first, second) => second.total - first.total);
-        const rankingRows = sortedPlayers.map((player, rank) => `
-          <tr>
-            <td><span class="rank">${rank + 1}</span></td>
-            <td class="player-name">${escapeHtml(player.name)}</td>
-            ${game.rounds.map((round) => `<td class="round-score">${round.scores[player.index]}</td>`).join("")}
-            <td class="total-score">${player.total}</td>
-          </tr>
-        `).join("");
-        const mobileRanking = sortedPlayers.map((player, rank) => `
-          <div class="mobile-player-score">
-            <strong>${escapeHtml(player.name)}</strong>
-            <span><span>${rank === 0 && game.rounds.length > 0 ? "Punktestand" : `${rank + 1}. Platz`}</span><b>${player.total}</b></span>
-          </div>
+        const scoreCards = sortedPlayers.map((player) => `
+          <article class="score-card">
+            <span class="score-card-label">Punktestand</span>
+            <strong class="score-card-name">${escapeHtml(player.name)}</strong>
+            <div class="score-card-points"><strong>${player.total}</strong><span>Gesamtpunkte</span></div>
+            <div class="score-card-detail">
+              <span class="score-detail-chip"><strong>${game.rounds.filter((round) => round.winner === player.name).length}</strong> Rundensiege</span>
+              <span class="score-detail-chip">${game.rounds.length} ${game.rounds.length === 1 ? "Runde" : "Runden"}</span>
+            </div>
+          </article>
         `).join("");
 
         const scoreFields = game.players.map((name, index) => `
@@ -1968,43 +2471,70 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         `).join("");
 
         const eventInputs = game.players.map((name, playerIndex) => `
-          <tr>
-            <td class="player-name">${escapeHtml(name)}</td>
-            ${EVENT_TYPES.map((eventType) => `
-              <td>
-                <input class="event-check" type="checkbox" name="event-${playerIndex}-${eventType.key}" aria-label="${escapeHtml(eventType.label)} für ${escapeHtml(name)}">
-              </td>
-            `).join("")}
-          </tr>
+          <div class="event-player-card">
+            <strong>${escapeHtml(name)}</strong>
+            <div class="event-choice-list">
+              ${EVENT_TYPES.map((eventType) => `
+                <label class="event-choice">
+                  <input class="event-check" type="checkbox" name="event-${playerIndex}-${eventType.key}" aria-label="${escapeHtml(eventType.label)} für ${escapeHtml(name)}">
+                  <span>${escapeHtml(eventType.label)}</span>
+                </label>
+              `).join("")}
+            </div>
+          </div>
         `).join("");
 
-        const eventSummary = (round) => EVENT_TYPES.map((eventType) => {
-          const names = game.players.filter((_, playerIndex) => round.events?.[playerIndex]?.[eventType.key]);
-          return names.length ? `${eventType.label}: ${names.join(", ")}` : "";
-        }).filter(Boolean).join(" · ") || "Keine Ereignisse";
-
-        const roundRows = game.rounds.map((round, index) => `
-            <tr>
-              <td class="round-number">Runde ${round.roundNumber || index + 1}</td>
-              <td>${escapeHtml(round.starter || "—")}</td>
-              <td class="winner-name">${escapeHtml(round.winner || "—")}</td>
-              ${round.scores.map((score) => `<td class="round-score">${score}</td>`).join("")}
-              <td class="round-details">${escapeHtml(eventSummary(round))}</td>
-              <td class="round-actions">${game.canEdit ? `<button class="delete-round" type="button" data-remove-round="${escapeHtml(round.id)}" aria-label="Runde ${index + 1} löschen" title="Runde löschen">×</button>` : ""}</td>
-            </tr>
-          `).join("")
+        const roundCards = game.rounds.map((round, index) => {
+          const eventNames = EVENT_TYPES.flatMap((eventType) =>
+            game.players.flatMap((name, playerIndex) =>
+              round.events?.[playerIndex]?.[eventType.key]
+                ? [`${eventType.label}: ${name}`]
+                : []
+            )
+          );
+          const winnerKey = playerKey(round.winner || "");
+          return `
+            <article class="round-card">
+              <div class="round-card-header">
+                <div class="round-card-title">
+                  <strong>Runde ${round.roundNumber || index + 1}</strong>
+                  <span>Beginn: ${escapeHtml(round.starter || "—")} · Sieg: ${escapeHtml(round.winner || "—")}</span>
+                </div>
+                ${game.canEdit ? `<button class="delete-round" type="button" data-remove-round="${escapeHtml(round.id)}" aria-label="Runde ${index + 1} löschen" title="Runde löschen">×</button>` : ""}
+              </div>
+              <div class="round-card-scores" aria-label="Punkte je Mitspielendem">
+                ${game.players.map((name, playerIndex) => `
+                  <span class="round-score-chip${playerKey(name) === winnerKey ? " is-winner" : ""}">
+                    ${escapeHtml(name)} <strong>${round.scores[playerIndex]}</strong>
+                  </span>
+                `).join("")}
+              </div>
+              ${eventNames.length ? `<div class="round-card-events">${eventNames.map((summary) => `<span class="round-event-chip">${escapeHtml(summary)}</span>`).join("")}</div>` : ""}
+            </article>
+          `;
+        }).join("");
         const lastStarter = game.rounds.length ? game.rounds[game.rounds.length - 1].starter : game.startingPlayer;
         const followingStarter = game.players[(game.players.indexOf(lastStarter) + 1) % game.players.length];
         const starterMessage = game.rounds.length === 0
           ? `Runde 1 beginnt ${escapeHtml(followingStarter)}.`
           : `Start rotiert automatisch: Runde ${game.rounds.length + 1} beginnt ${escapeHtml(followingStarter)}.`;
-        const statisticsRows = game.players.map((name, index) => `
-          <tr>
-            <td class="player-name">${escapeHtml(name)}</td>
-            <td class="total-score">${gameTotal(game, index)}</td>
-            ${EVENT_TYPES.map((eventType) => `<td>${eventTotal(game, index, eventType.key)}</td>`).join("")}
-            <td>${game.rounds.filter((round) => round.winner === name).length}</td>
-          </tr>
+        const statisticsCards = game.players.map((name, index) => `
+          <article class="statistics-player-card">
+            <div class="statistics-player-heading">
+              <div>
+                <span class="statistics-player-label">Mitspielende</span>
+                <div class="statistics-player-name">${escapeHtml(name)}</div>
+              </div>
+              <div class="statistics-player-points">
+                <strong>${gameTotal(game, index)}</strong>
+                <span>Gesamtpunkte</span>
+              </div>
+            </div>
+            <div class="statistics-player-detail">
+              ${EVENT_TYPES.map((eventType) => `<span class="score-detail-chip">${escapeHtml(eventType.label)} <strong>${eventTotal(game, index, eventType.key)}</strong></span>`).join("")}
+              <span class="score-detail-chip">Rundensiege <strong>${game.rounds.filter((round) => round.winner === name).length}</strong></span>
+            </div>
+          </article>
         `).join("");
         const roundFormMarkup = game.canEdit ? `
           <form class="round-form" id="round-form">
@@ -2028,12 +2558,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             </div>
             <h3 class="event-title">Ereignisse in dieser Runde</h3>
             <p class="event-hint">Markiere je Person, was in der Runde passiert ist. Jedes Ereignis zählt höchstens einmal pro Person und Runde.</p>
-            <div class="event-table-wrap" role="region" aria-label="Rommé-Ereignisse pro Person" tabindex="0">
-              <table class="event-table">
-                <thead><tr><th scope="col">Mitspielende</th>${EVENT_TYPES.map((eventType) => `<th scope="col">${escapeHtml(eventType.label)}</th>`).join("")}</tr></thead>
-                <tbody>${eventInputs}</tbody>
-              </table>
-            </div>
+            <div class="event-player-grid" aria-label="Rommé-Ereignisse pro Person">${eventInputs}</div>
             <button class="button" type="submit">＋ Runde eintragen</button>
           </form>
         ` : '<div class="empty-rounds">Diese Partie wurde zum Ansehen geteilt. Du kannst Spielstände und Statistiken sehen, aber keine Änderungen vornehmen.</div>';
@@ -2059,18 +2584,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             </div>
           </div>
           <div class="score-section">
-            <h3>Kumulierte Punkte</h3>
-            <p class="event-hint">Punkte je Runde werden addiert; wer eine Runde gewinnt, wird unabhängig davon ausgewählt.</p>
-            <div class="score-summary-mobile" aria-label="Rangliste">${mobileRanking}</div>
-            <div class="table-scroll score-summary-desktop" role="region" aria-label="Gesamtstand, horizontal scrollbar" tabindex="0">
-              <table class="score-table">
-                <thead>
-                  <tr><th scope="col">Platz</th><th scope="col">Mitspielende</th>${game.rounds.map((_, index) => `<th scope="col">R ${index + 1}</th>`).join("")}<th scope="col">Gesamt</th></tr>
-                </thead>
-                <tbody>${rankingRows}</tbody>
-              </table>
+            <div class="rounds-heading">
+              <h3>Punktestand am Spieltisch</h3>
+              <span>${game.players.length} Mitspielende</span>
             </div>
-            <p class="table-hint score-summary-desktop">Bei vielen Runden kannst du die Tabelle seitlich scrollen.</p>
+            <div class="score-card-grid" aria-label="Kumulierte Punkte je Mitspielendem">${scoreCards}</div>
 
             <div class="rounds-heading">
               <h3>${game.canEdit ? `Runde ${game.rounds.length + 1} eintragen` : "Punktestand"}</h3>
@@ -2080,30 +2598,81 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
             <div class="rounds-heading">
               <h3>Statistik über alle Runden</h3>
-              <span>kumuliert je Person</span>
+              <span>pro Person</span>
             </div>
-            <div class="table-scroll" role="region" aria-label="Kumulierte Rommé-Statistik, horizontal scrollbar" tabindex="0">
-              <table class="score-table stats-table">
-                <thead><tr><th scope="col">Mitspielende</th><th scope="col">Punkte</th>${EVENT_TYPES.map((eventType) => `<th scope="col">${escapeHtml(eventType.label)}</th>`).join("")}<th scope="col">Rundensiege</th></tr></thead>
-                <tbody>${statisticsRows}</tbody>
-              </table>
-            </div>
+            <div class="statistics-card-grid" aria-label="Kumulierte Rommé-Statistik">${statisticsCards}</div>
 
             <div class="rounds-heading">
               <h3>Rundenverlauf</h3>
               <span>${game.rounds.length} ${game.rounds.length === 1 ? "Runde" : "Runden"}</span>
             </div>
             ${game.rounds.length ? `
-              <div class="table-scroll" role="region" aria-label="Rundenverlauf, horizontal scrollbar" tabindex="0">
-                <table class="score-table round-table">
-                  <thead><tr><th scope="col">Runde</th><th scope="col">Start</th><th scope="col">Rundensieg</th>${game.players.map((name) => `<th scope="col">${escapeHtml(name)}</th>`).join("")}<th scope="col">Ereignisse</th><th scope="col" aria-label="Aktionen"></th></tr></thead>
-                  <tbody>${roundRows}</tbody>
-                </table>
-              </div>
-              <p class="table-hint">Bei vielen Mitspielenden oder Runden kannst du die Tabelle seitlich scrollen.</p>
+              <div class="round-history" aria-label="Rundenverlauf">${roundCards}</div>
             ` : '<div class="empty-rounds">Noch keine Runden eingetragen. Erfasse oben Punkte, Rundensieger und Ereignisse.</div>'}
           </div>
         `;
+      }
+
+      function renderStatistics() {
+        const statistics = new Map();
+        games.forEach((game) => {
+          game.players.forEach((name, playerIndex) => {
+            const key = playerKey(name);
+            if (!statistics.has(key)) {
+              statistics.set(key, {
+                name,
+                games: 0,
+                rounds: 0,
+                points: 0,
+                wins: 0,
+                events: Object.fromEntries(EVENT_TYPES.map((eventType) => [eventType.key, 0]))
+              });
+            }
+            const player = statistics.get(key);
+            player.games += 1;
+            player.rounds += game.rounds.length;
+            player.points += gameTotal(game, playerIndex);
+            player.wins += game.rounds.filter((round) => playerKey(round.winner || "") === key).length;
+            EVENT_TYPES.forEach((eventType) => {
+              player.events[eventType.key] += eventTotal(game, playerIndex, eventType.key);
+            });
+          });
+        });
+
+        const sortedPlayers = Array.from(statistics.values())
+          .sort((first, second) => first.name.localeCompare(second.name, "de"));
+        document.getElementById("statistics-game-count").textContent = String(games.length);
+        document.getElementById("statistics-round-count").textContent = String(
+          games.reduce((sum, game) => sum + game.rounds.length, 0)
+        );
+        document.getElementById("statistics-player-count").textContent = String(sortedPlayers.length);
+
+        const table = document.getElementById("statistics-player-table");
+        table.classList.remove("table-scroll");
+        table.innerHTML = sortedPlayers.length ? `
+          <div class="statistics-card-grid">
+            ${sortedPlayers.map((player) => `
+              <article class="statistics-player-card">
+                <div class="statistics-player-heading">
+                  <div>
+                    <span class="statistics-player-label">Spielerin / Spieler</span>
+                    <div class="statistics-player-name">${escapeHtml(player.name)}</div>
+                  </div>
+                  <div class="statistics-player-points">
+                    <strong>${player.points}</strong>
+                    <span>Gesamtpunkte</span>
+                  </div>
+                </div>
+                <div class="statistics-player-detail">
+                  <span class="score-detail-chip"><strong>${player.games}</strong> ${player.games === 1 ? "Partie" : "Partien"}</span>
+                  <span class="score-detail-chip"><strong>${player.rounds}</strong> ${player.rounds === 1 ? "Runde" : "Runden"}</span>
+                  <span class="score-detail-chip">Rundensiege <strong>${player.wins}</strong></span>
+                  ${EVENT_TYPES.map((eventType) => `<span class="score-detail-chip">${escapeHtml(eventType.label)} <strong>${player.events[eventType.key]}</strong></span>`).join("")}
+                </div>
+              </article>
+            `).join("")}
+          </div>
+        ` : '<p class="empty-list">Noch keine Rommé-Partien. Sobald du eine Partie erfasst hast, erscheinen hier die Statistiken.</p>';
       }
 
       function render() {
@@ -2112,6 +2681,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }
         renderPlayerFields();
         renderGameList();
+        renderStatistics();
         renderScoreboard();
       }
 
