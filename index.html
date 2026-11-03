@@ -127,6 +127,10 @@
       margin-top: 12px;
     }
 
+    #local-backup-actions[hidden] {
+      display: none;
+    }
+
     .workspace[hidden],
     .auth-panel[hidden],
     #sign-out[hidden],
@@ -1141,6 +1145,10 @@
         <input class="text-input" id="auth-email" name="email" type="email" maxlength="254" autocomplete="email" required>
         <button class="button" type="submit">Anmeldelink senden <span aria-hidden="true">→</span></button>
       </form>
+      <div id="local-backup-actions" hidden>
+        <p>Auf diesem Gerät liegen noch Spielstände aus der früheren lokalen Version.</p>
+        <button class="secondary-button" id="export-local-data" type="button">Lokale Spielstände als Datei sichern</button>
+      </div>
     </section>
 
     <div class="workspace" id="workspace" hidden>
@@ -1354,6 +1362,7 @@
         authPanel.hidden = isAuthenticated;
         workspace.hidden = !isAuthenticated;
         signOutButton.hidden = !isAuthenticated;
+        document.getElementById("local-backup-actions").hidden = isAuthenticated;
         connectionStatus.textContent = isAuthenticated ? currentUser.email : "Mit Supabase verbinden";
       }
 
@@ -1946,6 +1955,11 @@
         button.hidden = hasImported || !hasLocalData;
       }
 
+      function updateLocalExportButton() {
+        const hasLocalData = Boolean(localStorage.getItem(STORAGE_KEY) || localStorage.getItem(PLAYERS_KEY));
+        document.getElementById("local-backup-actions").hidden = !hasLocalData;
+      }
+
       async function initialize() {
         try {
           const callback = new URLSearchParams(window.location.hash.slice(1));
@@ -1967,6 +1981,7 @@
           session = readSession();
           if (!session) {
             setAuthenticatedView(false);
+            updateLocalExportButton();
             return;
           }
           currentUser = await authenticatedFetch("/auth/v1/user");
@@ -2293,6 +2308,16 @@
         }
       });
 
+      function downloadBackup(backup) {
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `spielstand-sicherung-${new Date().toISOString().slice(0, 10)}.json`;
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
       document.getElementById("export-data").addEventListener("click", () => {
         const backup = {
           format: BACKUP_FORMAT,
@@ -2301,14 +2326,25 @@
           players: playerNames,
           games
         };
-        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `spielstand-sicherung-${new Date().toISOString().slice(0, 10)}.json`;
-        link.click();
-        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        downloadBackup(backup);
         showNotice(`${games.length} ${games.length === 1 ? "Partie exportiert." : "Partien exportiert."}`);
+      });
+
+      document.getElementById("export-local-data").addEventListener("click", () => {
+        try {
+          const savedGames = localGames();
+          const savedPlayers = localPlayerNames();
+          downloadBackup({
+            format: BACKUP_FORMAT,
+            version: 2,
+            exportedAt: new Date().toISOString(),
+            players: uniquePlayers([...savedPlayers, ...savedGames.flatMap((game) => game.players)]),
+            games: savedGames
+          });
+          showNotice(`${savedGames.length} lokale ${savedGames.length === 1 ? "Partie wurde" : "Partien wurden"} als Sicherung exportiert.`);
+        } catch (error) {
+          showNotice(`Lokale Spielstände konnten nicht exportiert werden: ${error.message}`, true);
+        }
       });
 
       document.getElementById("import-data").addEventListener("click", () => importFileInput.click());
