@@ -2299,6 +2299,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       });
 
       signOutButton.addEventListener("click", async () => {
+        if (!currentUser?.email && !window.confirm("Diese anonyme Anmeldung kann ohne E-Mail nicht wiederhergestellt werden. Beim Abmelden verlierst du den Zugriff auf die damit gespeicherten Spielstände. Möchtest du dich wirklich abmelden?")) {
+          return;
+        }
         try {
           await authenticatedFetch("/auth/v1/logout", { method: "POST" });
           storeSession(null);
